@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Icon } from '@iconify/vue'
+
 interface DonorProfile {
   first_name: string
   last_name: string

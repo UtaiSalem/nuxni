@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { Icon } from '@iconify/vue'
 
 interface Props {
@@ -14,6 +14,7 @@ const emit = defineEmits<{
   bookmark: []
   share: []
   comment: []
+  assignment: []
 }>()
 
 // State
@@ -26,6 +27,8 @@ const dislikeCount = ref(props.lesson.dislike_count || 0)
 const bookmarkCount = ref(props.lesson.bookmarks_count || 0)
 const commentCount = ref(props.lesson.comment_count || 0)
 const shareCount = ref(props.lesson.share_count || 0)
+const assignmentCount = ref(props.lesson.assignments?.length || 0)
+const hasAssignments = computed(() => assignmentCount.value > 0)
 
 // Methods
 const handleLike = () => {
@@ -72,6 +75,10 @@ const handleShare = () => {
 const handleComment = () => {
   emit('comment')
 }
+
+const handleAssignment = () => {
+  emit('assignment')
+}
 </script>
 
 <template>
@@ -104,7 +111,7 @@ const handleComment = () => {
     </div>
 
     <!-- Action Buttons -->
-    <div class="grid grid-cols-5 gap-2">
+    <div class="grid grid-cols-6 gap-2">
       <!-- Like Button -->
       <button
         @click="handleLike"
@@ -181,6 +188,25 @@ const handleComment = () => {
           class="w-5 h-5 transition-transform group-hover:scale-110"
         />
         <span class="font-medium text-sm">แชร์</span>
+      </button>
+
+      <!-- Assignment Button -->
+      <button
+        v-if="hasAssignments"
+        @click="handleAssignment"
+        class="group relative flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 transition-all duration-300 hover:scale-105 shadow-lg"
+      >
+        <Icon
+          icon="fluent:clipboard-task-24-filled"
+          class="w-5 h-5 transition-transform group-hover:scale-110"
+        />
+        <span class="font-medium text-sm">แบบฝึกหัด</span>
+        <!-- Badge -->
+        <span
+          class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg animate-pulse"
+        >
+          {{ assignmentCount }}
+        </span>
       </button>
     </div>
   </div>

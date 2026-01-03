@@ -1,5 +1,14 @@
 <script setup>
-import Velocity from "velocity-animate";
+import { onMounted } from 'vue';
+
+let Velocity = null;
+
+onMounted(async () => {
+    if (typeof window !== 'undefined') {
+        const module = await import("velocity-animate");
+        Velocity = module.default || module;
+    }
+});
 
 const props = defineProps({
     duration: {
@@ -18,7 +27,13 @@ function enter(el, done) {
     const index = el.dataset.index || 1;
     var delay = index * props.duration;
     setTimeout(() => {
-    Velocity(el, { opacity: 1, height: "100%" }, { complete: done });
+        if (Velocity) {
+            Velocity(el, { opacity: 1, height: "100%" }, { complete: done });
+        } else {
+            el.style.opacity = 1;
+            el.style.height = "100%";
+            done();
+        }
     }, delay);
 }
 
@@ -27,7 +42,13 @@ function leave(el, done) {
     const index = el.dataset.index || 1;
     var delay = index * props.duration;
     setTimeout(() => {
-    Velocity(el, { opacity: 0, height: 0 }, { complete: done });
+        if (Velocity) {
+            Velocity(el, { opacity: 0, height: 0 }, { complete: done });
+        } else {
+            el.style.opacity = 0;
+            el.style.height = 0;
+            done();
+        }
     }, delay);
 }
 

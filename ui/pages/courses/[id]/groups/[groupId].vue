@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
+import CourseFeedsList from '~/components/course/CourseFeedsList.vue'
+import CourseGroupResources from '~/components/course/groups/CourseGroupResources.vue'
+import CourseGroupAttendance from '@/PlearndComponents/learn/courses/attendances/CourseGroupAttendance.vue'
 
 // Inject course data
 const course = inject<Ref<any>>('course')
@@ -11,15 +14,28 @@ const api = useApi()
 const config = useRuntimeConfig()
 
 // Group ID from route
-const groupId = computed(() => route.params.groupId)
+const groupId = computed(() => Array.isArray(route.params.groupId) ? route.params.groupId[0] : route.params.groupId)
 
 // State
 const group = ref<any>(null)
 const members = ref<any[]>([])
+const requesters = ref<any[]>([])
 const isLoading = ref(true)
 const isJoining = ref(false)
 const isLeaving = ref(false)
+
 const showEditModal = ref(false)
+const activeTab = ref('about')
+
+const tabs = computed(() => {
+  const baseTabs = [
+    { id: 'attendance', label: 'การเข้าเรียน', icon: 'heroicons:calendar-days' },
+    { id: 'resources', label: 'ไฟล์/เอกสาร', icon: 'heroicons:document-duplicate' },
+    { id: 'members', label: 'สมาชิก', icon: 'heroicons:users' },
+    { id: 'about', label: 'เกี่ยวกับ', icon: 'heroicons:information-circle' },
+  ]
+  return baseTabs
+})
 
 // Check if user is member
 const isMember = computed(() => !!group.value?.groupMemberOfAuth)
@@ -30,13 +46,52 @@ const loadGroup = async () => {
   
   isLoading.value = true
   try {
-    const response = await api.get(`/api/courses/${course.value.id}/groups/${groupId.value}`)
+    const response = await api.get(`/api/courses/${course.value.id}/groups/${groupId.value}`) as any
     group.value = response.group || response.data?.group || response
     members.value = group.value.members || []
+    
+    // Load requesters if admin
+    if (isCourseAdmin.value || group.value.groupMemberOfAuth?.role === 'admin') {
+      await loadRequesters()
+    }
   } catch (error) {
     console.error('Failed to load group:', error)
   } finally {
     isLoading.value = false
+  }
+}
+
+// Load requesters
+const loadRequesters = async () => {
+  try {
+    const response = await api.get(`/api/courses/${course.value.id}/groups/${groupId.value}/members/requesters`) as any
+    requesters.value = response.data || []
+  } catch (error) {
+    console.error('Failed to load requesters:', error)
+  }
+}
+
+// Approve member
+const approveMember = async (memberId: number) => {
+  try {
+    await api.post(`/api/courses/${course.value.id}/groups/${groupId.value}/members/${memberId}/approve`, {})
+    // Reload lists
+    await loadGroup()
+    await loadRequesters()
+  } catch (error: any) {
+    alert(error.data?.message || 'ไม่สามารถอนุมัติได้')
+  }
+}
+
+// Reject member
+const rejectMember = async (memberId: number) => {
+  if (!confirm('ยืนยันการปฏิเสธคำขอ?')) return
+  try {
+    await api.post(`/api/courses/${course.value.id}/groups/${groupId.value}/members/${memberId}/reject`, {})
+    // Reload lists
+    await loadRequesters()
+  } catch (error: any) {
+    alert(error.data?.message || 'ไม่สามารถปฏิเสธได้')
   }
 }
 
@@ -46,7 +101,7 @@ const joinGroup = async () => {
   
   isJoining.value = true
   try {
-    await api.post(`/api/courses/${course.value.id}/groups/${groupId.value}/members`)
+    await api.post(`/api/courses/${course.value.id}/groups/${groupId.value}/members/join`, {})
     await loadGroup() // Reload to get updated data
   } catch (error: any) {
     alert(error.data?.message || 'ไม่สามารถเข้าร่วมกลุ่มได้')
@@ -62,11 +117,8 @@ const leaveGroup = async () => {
   
   isLeaving.value = true
   try {
-    const memberId = group.value.groupMemberOfAuth?.id
-    if (memberId) {
-      await api.delete(`/api/courses/${course.value.id}/groups/${groupId.value}/members/${memberId}`)
-      await loadGroup()
-    }
+    await api.post(`/api/courses/${course.value.id}/groups/${groupId.value}/members/leave`, {})
+    await loadGroup()
   } catch (error: any) {
     alert(error.data?.message || 'ไม่สามารถออกจากกลุ่มได้')
   } finally {
@@ -201,12 +253,106 @@ onMounted(() => {
         </div>
       </div>
 
+      <!-- Tabs Navigation -->
+      <div class="flex items-center gap-2 border-b border-gray-200 dark:border-gray-700 mb-6 overflow-x-auto">
+        <button
+          v-for="tab in tabs"
+          :key="tab.id"
+          @click="activeTab = tab.id"
+          class="flex items-center gap-2 px-4 py-3 border-b-2 font-medium transition-colors whitespace-nowrap"
+          :class="activeTab === tab.id ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'"
+        >
+          <Icon :icon="tab.icon" class="w-5 h-5" />
+          {{ tab.label }}
+        </button>
+      </div>
+
+
+
+      <!-- Attendance Tab -->
+       <div v-if="activeTab === 'attendance'">
+        <CourseGroupAttendance 
+            v-if="group"
+            :groups="[group]"
+        />
+       </div>
+
+      <!-- Resources Tab -->
+       <div v-if="activeTab === 'resources'">
+            <CourseGroupResources
+               :course-id="course.id"
+               :group-id="groupId"
+               :is-course-admin="isCourseAdmin"
+            />
+       </div>
+
+      <!-- About Tab -->
+      <div v-if="activeTab === 'about'" class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+          <h2 class="text-xl font-bold mb-4">เกี่ยวกับกลุ่ม</h2>
+          <p class="text-gray-600 dark:text-gray-300 whitespace-pre-line">{{ group.description || 'ไม่มีคำอธิบาย' }}</p>
+          <div class="mt-6 grid grid-cols-2 gap-4">
+              <div class="p-4 bg-gray-50 dark:bg-gray-900 rounded-xl">
+                  <div class="text-sm text-gray-500">วันที่สร้าง</div>
+                  <div class="font-medium">
+                    {{ group.created_at ? new Date(group.created_at).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' }) : '-' }}
+                  </div>
+              </div>
+               <div class="p-4 bg-gray-50 dark:bg-gray-900 rounded-xl">
+                  <div class="text-sm text-gray-500">สถานะ</div>
+                  <div class="font-medium">
+                      {{ group.privacy === 'private' ? 'กลุ่มส่วนตัว' : 'กลุ่มสาธารณะ' }}
+                  </div>
+              </div>
+          </div>
+      </div>
+
       <!-- Members List -->
-      <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+      <div v-if="activeTab === 'members'" class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
         <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
           <Icon icon="heroicons:users" class="w-6 h-6" />
           สมาชิกกลุ่ม ({{ members.length }})
         </h2>
+
+        <!-- Pending Requests -->
+        <div v-if="requesters.length > 0" class="mb-8">
+          <h3 class="text-lg font-semibold text-orange-500 mb-3 flex items-center gap-2">
+            <Icon icon="heroicons:user-plus" class="w-5 h-5" />
+            คำขอเข้าร่วม ({{ requesters.length }})
+          </h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div 
+              v-for="req in requesters" 
+              :key="req.id"
+              class="flex items-center gap-3 p-3 bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/30 rounded-lg"
+            >
+              <img 
+                :src="getMemberAvatar(req)" 
+                :alt="getMemberName(req)"
+                class="w-10 h-10 rounded-full object-cover"
+              >
+              <div class="flex-1 min-w-0">
+                <p class="font-medium text-gray-900 dark:text-white truncate">{{ getMemberName(req) }}</p>
+                <p class="text-xs text-orange-500">รออนุมัติ</p>
+              </div>
+              <div class="flex items-center gap-1">
+                <button 
+                  @click="approveMember(req.id)"
+                  class="p-1 text-green-600 hover:bg-green-100 rounded"
+                  title="อนุมัติ"
+                >
+                  <Icon icon="fluent:checkmark-24-filled" class="w-5 h-5" />
+                </button>
+                <button 
+                  @click="rejectMember(req.id)"
+                  class="p-1 text-red-600 hover:bg-red-100 rounded"
+                  title="ปฏิเสธ"
+                >
+                  <Icon icon="fluent:dismiss-24-filled" class="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
         
         <!-- Members Grid -->
         <div v-if="members.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

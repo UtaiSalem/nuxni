@@ -11,6 +11,10 @@ const props = defineProps({
   courseId: {
     type: [String, Number],
     required: true
+  },
+  groupId: {
+    type: [String, Number],
+    default: null
   }
 })
 
@@ -81,6 +85,7 @@ const handlePostCreated = (post) => {
     <CourseCreatePostModal 
       :show="showModal"
       :course-id="courseId"
+      :group-id="groupId"
       @close="closeModal" 
       @post-created="handlePostCreated" 
     />

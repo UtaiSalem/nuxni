@@ -12,7 +12,7 @@ class QuestionImage extends Model
     
     protected $guarded = [];
 
-    protected $appends = ['url'];
+    protected $appends = ['url', 'full_url'];
 
     public function imageable(): MorphTo
     {
@@ -21,6 +21,20 @@ class QuestionImage extends Model
 
     public function getUrlAttribute(): string
     {
-        return asset('storage/images/courses/quizzes/questions/' . $this->filename);
+        if (isset($this->attributes['image_url']) && $this->attributes['image_url']) {
+             return asset('storage/' . $this->attributes['image_url']);
+        }
+
+        $folder = 'images/courses/quizzes/questions';
+        if ($this->imageable_type === 'App\Models\QuestionOption' || $this->imageable_type === 'QuestionOption') {
+            $folder = 'images/courses/lessons/quizzes/options';
+        }
+
+        return asset("storage/{$folder}/" . $this->filename);
+    }
+
+    public function getFullUrlAttribute(): string
+    {
+        return $this->url;
     }
 }

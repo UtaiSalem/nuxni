@@ -3,6 +3,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import Swal from 'sweetalert2';
 import QuestionItem from '@/PlearndComponents/learn/courses/questions/QuestionItem.vue';
 import { useQuestionAnswersStore } from '@/stores/questionAnswers';
+import ContentLoader from '@/PlearndComponents/accessories/ContentLoader.vue';
 
 const props = defineProps({
     questionableType: String,
@@ -12,6 +13,7 @@ const props = defineProps({
     questions: Object,
     startQuizAt: Date,
     quizId: Number, // Add quizId prop to identify which quiz this is
+    isCourseAdmin: Boolean,
 });
 
 const model = defineModel();
@@ -99,7 +101,6 @@ watch(() => props.questions, (newQuestions) => {
 
 // Additional watch to ensure progress is always visible
 watch(() => questionAnswersStore.answeredQuestionsCount, (newCount) => {
-    // console.log('Progress updated:', newCount, '/', props.questions?.length || 0);
 }, { immediate: true });
 
 const handleUpdateQuestion = (updatedQuestion, qIdx) => {
@@ -155,23 +156,25 @@ defineExpose({
         <div class="tabs flex flex-col justify-center w-full">
             <div class="tabs-header px-2 w-full flex flex-col items-center justify-center">
                 <!-- Quiz progress indicator (always visible for students, hidden for course owners) -->
-                <div v-if="props.questions && props.questions.length > 0 && !$page.props.isCourseAdmin" class="w-full mb-4 p-4 rounded-lg shadow-sm"
-                     :class="progressPercentage === 100 ? 'bg-green-50 border border-green-200' : 'bg-blue-50 border border-blue-200'">
+                <div v-if="props.questions && props.questions.length > 0 && !props.isCourseAdmin" class="w-full mb-4 p-4 rounded-lg shadow-sm transition-colors duration-300"
+                     :class="progressPercentage === 100 
+                        ? 'bg-green-50 border border-green-200 dark:bg-green-900/20 dark:border-green-800' 
+                        : 'bg-blue-50 border border-blue-200 dark:bg-blue-900/20 dark:border-blue-800'">
                     <div class="flex justify-between items-center mb-2">
                         <div class="flex items-center">
                             <div class="w-3 h-3 rounded-full mr-2" :class="progressColor"></div>
-                            <span class="text-sm font-medium text-gray-700">ความคืบหน้า:</span>
+                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">ความคืบหน้า:</span>
                         </div>
                         <div class="text-right">
-                            <span class="font-bold text-lg" :class="progressPercentage === 100 ? 'text-green-600' : 'text-blue-600'">
+                            <span class="font-bold text-lg" :class="progressPercentage === 100 ? 'text-green-600 dark:text-green-400' : 'text-blue-600 dark:text-blue-400'">
                                 {{ answeredQuestionsCount }}/{{ props.questions.length }}
                             </span>
-                            <span class="text-sm text-gray-600 ml-1">ข้อ</span>
+                            <span class="text-sm text-gray-600 dark:text-gray-400 ml-1">ข้อ</span>
                         </div>
                     </div>
                     
                     <!-- Progress bar with color -->
-                    <div class="w-full bg-gray-200 rounded-full h-3 mb-2 overflow-hidden">
+                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-2 overflow-hidden">
                         <div class="h-3 rounded-full transition-all duration-500 ease-out flex items-center justify-end pr-1"
                              :class="progressColor"
                              :style="{ width: `${progressPercentage}%` }">
@@ -183,10 +186,10 @@ defineExpose({
                     
                     <!-- Progress status -->
                     <div class="flex justify-between items-center">
-                        <span class="text-sm font-medium" :class="progressPercentage === 100 ? 'text-green-600' : 'text-gray-600'">
+                        <span class="text-sm font-medium" :class="progressPercentage === 100 ? 'text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-gray-300'">
                             {{ progressStatus }}
                         </span>
-                        <span class="text-xs text-gray-500">
+                        <span class="text-xs text-gray-500 dark:text-gray-400">
                             เหลืออีก {{ props.questions.length - answeredQuestionsCount }} ข้อ
                         </span>
                     </div>
@@ -198,13 +201,13 @@ defineExpose({
                 </div>
                 
                 <!-- Questions list for students (only show when quiz is started) -->
-                <div v-else-if="model && !$page.props.isCourseAdmin" class="w-full">
+                <div v-else-if="model && !props.isCourseAdmin" class="w-full">
                     <div v-for="(question, idx) in props.questions" :key="question.id" class="w-full border rounded-md p-1 my-2">
                         <QuestionItem
                             :questionApiRoute
                             :question="question"
                             :indexNumber="idx"
-                            :isCourseOwner="$page.props.isCourseAdmin"
+                            :isCourseOwner="props.isCourseAdmin"
                             :startQuizAt="startQuizAt"
                             :quizId="props.quizId"
 
@@ -215,13 +218,13 @@ defineExpose({
                 </div>
                 
                 <!-- Questions list for course admins -->
-                <div v-if="$page.props.isCourseAdmin" class="w-full">
+                <div v-if="props.isCourseAdmin" class="w-full">
                     <div v-for="(question, idx) in props.questions" :key="question.id" class="w-full border rounded-md my-2">
                         <QuestionItem
                             :questionApiRoute
                             :question="question"
                             :indexNumber="idx"
-                            :isCourseOwner="$page.props.isCourseAdmin"
+                            :isCourseOwner="props.isCourseAdmin"
                             :startQuizAt="startQuizAt"
                             :quizId="props.quizId"
 
@@ -236,17 +239,10 @@ defineExpose({
         </div>
         
         <!-- Loading overlay -->
+        <!-- Loading overlay -->
+        <!-- Loading overlay -->
         <div v-if="isLoading" class="fixed inset-0 bg-white bg-opacity-80 z-20 h-screen w-screen flex items-center justify-center">
-            <div class="flex flex-col items-center">
-                <svg class="animate-spin h-20 w-20 text-gray-800" xmlns="http://www.w3.org/2000/svg" fill="none"
-                    viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                    </path>
-                </svg>
-                <p class="mt-4 text-gray-600">กำลังดำเนินการ...</p>
-            </div>
+             <ContentLoader />
         </div>
     </div>
 </template>

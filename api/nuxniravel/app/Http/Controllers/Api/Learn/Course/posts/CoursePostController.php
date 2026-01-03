@@ -43,6 +43,14 @@ class CoursePostController extends Controller
         if ($type && $type !== 'all') {
             $query->where('post_type', $type);
         }
+
+        // Filter by group_id
+        if ($request->has('group_id') && $request->group_id) {
+            $query->where('group_id', $request->group_id);
+        } else {
+            // Optional: Exclude group posts from main course feed if desired
+            // $query->whereNull('group_id');
+        }
         
         $posts = $query->paginate($perPage, ['*'], 'page', $page);
         
@@ -98,14 +106,16 @@ class CoursePostController extends Controller
             $validatedData = $request->validate([
                 'content'           => 'nullable|string|max:5000',
                 'images.*'          => 'image|mimes:jpeg,png,jpg,gif,svg|max:4048|nullable',
+                'group_id'          => 'nullable|exists:course_groups,id',
             ]);
 
             $content = $validatedData['content'] ?? '';
             $hashtags = $this->extractHashtags($content);
 
             $post               = new CoursePost();
-            $course_post->user_id      = auth()->user()->id;
+            $post->user_id      = auth()->user()->id;
             $post->course_id    = $course->id;
+            $post->group_id     = $validatedData['group_id'] ?? null;
             $post->academy_id   = $course->academy_id ?? null;
             $post->content      = $validatedData['content'] ?? '';
             $post->privacy_settings = 3;
@@ -119,14 +129,14 @@ class CoursePostController extends Controller
                     $fileName = uniqid() . '.' . $image->getClientOriginalExtension();
                     Storage::disk('public')->putFileAs('images/courses/posts', $image, $fileName);
 
-                    $course_post->post_images()->create([
+                    $post->post_images()->create([
                         'filename' => $fileName,
                     ]);
                 }
             }
 
             $activity = new Activity();
-            $activity->user_id = $course_post->user_id;
+            $activity->user_id = $post->user_id;
             $activity->activity_type = ActivityType::CREATE_POST->value;
             $activity->activityable()->associate($post);
             $activity->save();

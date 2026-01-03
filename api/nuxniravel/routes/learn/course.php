@@ -38,12 +38,15 @@ use App\Http\Controllers\Api\Learn\Course\posts\CoursePostImageCommentController
 use App\Http\Controllers\Api\Learn\Course\members\CourseMemberGradeProgressController;
 use App\Http\Controllers\Api\Learn\Course\posts\CoursePostCommentReactionController;
 use App\Http\Controllers\Api\Learn\Course\posts\CoursePostImageCommentReactionController;
+use App\Http\Controllers\Api\Learn\Course\lessons\LessonProgressController;
 use App\Http\Controllers\CoursePostShareController;
 
 
 Route::middleware(['auth:api', 'verified'])->group(function () {
     Route::get('/courses/{course}/settings', [CourseController::class, 'settings'])->name('course.settings.page.show');
     Route::get('/courses/{course}/basic-info', [CourseController::class, 'basicInfo'])->name('course.basic-info.page.show');
+    Route::get('/me/recent-courses', [CourseController::class, 'getRecentCourses'])->name('api.courses.recent');
+    Route::get('/courses/popular', [CourseController::class, 'getPopularCourses'])->name('api.courses.popular');
 });
 
 Route::middleware(['auth:api', 'verified'])->prefix('/courses')->group(function () {
@@ -58,6 +61,10 @@ Route::middleware(['auth:api', 'verified'])->prefix('/courses')->group(function 
     
     Route::get('/users/{user}', [CourseController::class, 'getUserCourses'])->name('user.courses');
     Route::get('/users/{user}/member', [CourseController::class, 'getAuthMemberCourses'])->name('auth.member.courses');
+
+    Route::get('/{course}/groups/{group}/member-requesters', [CourseGroupMemberController::class, 'getRequesters']);
+    Route::post('/{course}/groups/{group}/members/{member}/approve', [CourseGroupMemberController::class, 'approveRequest']);
+    Route::post('/{course}/groups/{group}/members/{member}/reject', [CourseGroupMemberController::class, 'rejectRequest']);
 
     Route::post('/{course}/groups/{group}/members', [CourseGroupMemberController::class, 'store']);
     Route::delete('/{course}/members/groups/{group}', [CourseGroupMemberController::class, 'unMemberGroup']);
@@ -83,9 +90,21 @@ Route::middleware(['auth:api', 'verified'])->prefix('/api/courses')->group(funct
 });
 
 Route::middleware(['auth:api', 'verified'])->prefix('/courses/{course}/groups')->group(function () {
-    Route::resource('/', CourseGroupController::class);
+    Route::get('/', [CourseGroupController::class, 'index'])->name('course.groups.index');
+    Route::post('/', [CourseGroupController::class, 'store'])->name('course.groups.store');
+    Route::get('/{group}', [CourseGroupController::class, 'show'])->name('course.groups.show');
     Route::patch('/{group}', [CourseGroupController::class, 'update'])->name('course.groups.update');
     Route::delete('/{group}', [CourseGroupController::class, 'destroy'])->name('course.groups.destroy');
+
+    // Group Members
+    Route::prefix('/{group}/members')->group(function () {
+        Route::post('/join', [CourseGroupMemberController::class, 'store'])->name('course.groups.members.join');
+        Route::post('/leave', [CourseGroupMemberController::class, 'leave'])->name('course.groups.members.leave');
+        Route::get('/requesters', [CourseGroupMemberController::class, 'getRequesters'])->name('course.groups.members.requesters');
+        Route::post('/{member}/approve', [CourseGroupMemberController::class, 'approveRequest'])->name('course.groups.members.approve');
+        Route::post('/{member}/reject', [CourseGroupMemberController::class, 'rejectRequest'])->name('course.groups.members.reject');
+        Route::delete('/{member}', [CourseGroupMemberController::class, 'destroy'])->name('course.groups.members.remove');
+    });
 });
 
 Route::middleware(['auth:api', 'verified'])->prefix('/courses/{course}/lessons')->group(function () {
@@ -118,6 +137,12 @@ Route::middleware(['auth:api', 'verified'])->prefix('/lessons/{lesson}')->group(
     Route::post('/comments/{lesson_comment}/like', [LessonCommentReactionController::class, 'toggleLike'])->name('lesson.comments.like.toggle');
     Route::post('/comments/{lesson_comment}/dislike', [LessonCommentReactionController::class, 'toggleDislike'])->name('lesson.comments.dislike.toggle');
 
+    // Lesson Progress routes
+    Route::get('/progress', [LessonProgressController::class, 'show'])->name('lesson.progress.show');
+    Route::post('/progress/start', [LessonProgressController::class, 'start'])->name('lesson.progress.start');
+    Route::post('/progress/complete', [LessonProgressController::class, 'complete'])->name('lesson.progress.complete');
+    Route::post('/progress/toggle', [LessonProgressController::class, 'toggleComplete'])->name('lesson.progress.toggle');
+    Route::post('/progress/time-spent', [LessonProgressController::class, 'updateTimeSpent'])->name('lesson.progress.time-spent');
 
 });
 
@@ -126,6 +151,7 @@ Route::middleware(['auth:api', 'verified'])->prefix('/lessons')->group(function 
     Route::resource('/{lesson}/images', LessonImageController::class);
     Route::resource('/{lesson}/assignments', LessonAssignmentController::class);
     Route::resource('/{lesson}/questions', LessonQuestionController::class);
+    Route::post('/{lesson}/questions/{question}/answer', [\App\Http\Controllers\Api\Learn\Course\lessons\questions\LessonAnswerQuestionController::class, 'store'])->name('lesson.questions.answer');
     
     Route::resource('/{lesson}/topics', TopicController::class);
     

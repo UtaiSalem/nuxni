@@ -8,9 +8,9 @@ use App\Models\Course;
 use App\Models\Assignment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use App\\Http\\Resources\\Learn\\Course\\info\\CourseResource;
+use App\Http\Resources\Learn\Course\info\CourseResource;
 use Illuminate\Support\Facades\Storage;
-use App\\Http\\Resources\\Learn\\Course\\assignments\\AssignmentResource;
+use App\Http\Resources\Learn\Course\assignments\AssignmentResource;
 
 
 class CourseAssignmentController extends Controller
@@ -19,10 +19,20 @@ class CourseAssignmentController extends Controller
     {
         return response()->json([
             'course'                => new CourseResource($course),
-            'assignments'           => AssignmentResource::collection($course->courseAssignments),
+            'assignments'           => AssignmentResource::collection($course->courseAssignments()->latest()->paginate(15)),
             'groups'                => $course->courseGroups()->get(['id', 'name']),
             'isCourseAdmin'         => $course->user_id === auth()->id(),
             'courseMemberOfAuth'    => $course->courseMembers()->where('user_id', auth()->id())->first(),
+        ]);
+    }
+
+    public function show(Course $course, Assignment $assignment)
+    {
+        return response()->json([
+            'assignment' => new AssignmentResource($assignment),
+            'course' => new CourseResource($course),
+            'groups' => $course->courseGroups()->get(['id', 'name']),
+            'isCourseAdmin' => $course->user_id === auth()->id(),
         ]);
     }
     
@@ -31,6 +41,7 @@ class CourseAssignmentController extends Controller
         $validated = $request->validate([
             'title' => 'required|string',
             'points' => 'required',
+            'passing_score' => 'nullable|integer|min:0',
             'due_date' => 'nullable',
             'start_date' => 'nullable',
             'end_date' => 'nullable',
@@ -45,13 +56,14 @@ class CourseAssignmentController extends Controller
         $assignment = $course->assignments()->create([
             'title'             => $validated['title'],
             'points'            => $validated['points'],
+            'passing_score'     => $validated['passing_score'] ?? floor($validated['points'] / 2),
             'graded_score'      => $validated['points'],
-            'due_date'          => Carbon::parse($validated['due_date'])->setTimezone('Asia/Bangkok'),
-            'start_date'        => Carbon::parse($validated['start_date'])->setTimezone('Asia/Bangkok'),
-            'end_date'          => Carbon::parse($validated['end_date'])->setTimezone('Asia/Bangkok'),
-            'target_groups'     => $validated['target_groups'],
-            'increase_points'   => $validated['increase_points'],
-            'decrease_points'   => $validated['decrease_points'],
+            'due_date'          => !empty($validated['due_date']) ? Carbon::parse($validated['due_date'])->setTimezone('Asia/Bangkok') : null,
+            'start_date'        => !empty($validated['start_date']) ? Carbon::parse($validated['start_date'])->setTimezone('Asia/Bangkok') : null,
+            'end_date'          => !empty($validated['end_date']) ? Carbon::parse($validated['end_date'])->setTimezone('Asia/Bangkok') : null,
+            'target_groups'     => $validated['target_groups'] ?? null,
+            'increase_points'   => $validated['increase_points'] ?? null,
+            'decrease_points'   => $validated['decrease_points'] ?? null,
             'status'            => $validated['status'],
         ]);
 
@@ -83,6 +95,7 @@ class CourseAssignmentController extends Controller
         $validated = $request->validate([
             'title' => 'required|string',
             'points' => 'required',
+            'passing_score' => 'nullable|integer|min:0',
             'due_date' => 'nullable',
             'start_date' => 'nullable',
             'end_date' => 'nullable',
@@ -97,15 +110,16 @@ class CourseAssignmentController extends Controller
         $assignment->update([
             'title'                 => $validated['title'],
             'points'                => $validated['points'],
+            'passing_score'         => $validated['passing_score'] ?? 0,
             'graded_score'          => $validated['points'],
-            'due_date'              => Carbon::parse($validated['due_date'])->setTimezone('Asia/Bangkok'),
-            'start_date'            => Carbon::parse($validated['start_date'])->setTimezone('Asia/Bangkok'),
-            'end_date'              => Carbon::parse($validated['end_date'])->setTimezone('Asia/Bangkok'),
+            'due_date'              => !empty($validated['due_date']) ? Carbon::parse($validated['due_date'])->setTimezone('Asia/Bangkok') : null,
+            'start_date'            => !empty($validated['start_date']) ? Carbon::parse($validated['start_date'])->setTimezone('Asia/Bangkok') : null,
+            'end_date'              => !empty($validated['end_date']) ? Carbon::parse($validated['end_date'])->setTimezone('Asia/Bangkok') : null,
             // 'target_groups'      => json_encode($validated['target_groups'])->toArray(),
             // 'target_groups'         => json_encode($validated['target_groups']),
-            'target_groups'         => $validated['target_groups'],
-            'increase_points'       => $validated['increase_points'],
-            'decrease_points'       => $validated['decrease_points'],
+            'target_groups'         => $validated['target_groups'] ?? null,
+            'increase_points'       => $validated['increase_points'] ?? null,
+            'decrease_points'       => $validated['decrease_points'] ?? null,
             'status'                => $validated['status'],
         ]);
         

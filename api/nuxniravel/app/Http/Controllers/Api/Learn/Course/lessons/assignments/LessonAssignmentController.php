@@ -6,7 +6,7 @@ use App\Models\Lesson;
 use App\Models\Assignment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use App\Http\Resources\AssignmentResource;
+use App\Http\Resources\Learn\Course\assignments\AssignmentResource;
 
 class LessonAssignmentController extends \App\Http\Controllers\Controller
 {
@@ -33,8 +33,17 @@ class LessonAssignmentController extends \App\Http\Controllers\Controller
     {
         $assignment = $lesson->assignments()->create([
             'title' => $request->title,
+            'description' => $request->description,
             'points' => $request->points,
+            'start_date' => $request->start_date,
+            'due_date' => $request->due_date,
+            'status' => 1 // Auto publish
         ]);
+
+        // Update Course Total Score
+        if ($lesson->course && $request->points > 0) {
+            $lesson->course->increment('total_score', $request->points);
+        }
 
         if($request->hasFile('images')) {
             $images = $request->file('images');
@@ -75,10 +84,24 @@ class LessonAssignmentController extends \App\Http\Controllers\Controller
      */
     public function update(Lesson $lesson, Assignment $assignment, Request $request)
     {
+        $oldPoints = $assignment->points;
         $assignment->update([
             'title' => $request->title,
+            'description' => $request->description,
             'points' => $request->points,
+            'start_date' => $request->start_date,
+            'due_date' => $request->due_date,
         ]);
+
+        // Update Course Total Score if points changed
+        if ($lesson->course) {
+            $diff = $request->points - $oldPoints;
+            if ($diff > 0) {
+                $lesson->course->increment('total_score', $diff);
+            } elseif ($diff < 0) {
+                $lesson->course->decrement('total_score', abs($diff));
+            }
+        }
 
         if($request->hasFile('images')) {
             $images = $request->file('images');
@@ -101,8 +124,42 @@ class LessonAssignmentController extends \App\Http\Controllers\Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Lesson $lesson, Assignment $assignment)
     {
-        //
+        // Delete all answers and their images
+        foreach ($assignment->answers as $answer) {            
+            // Deduct points from CourseMember if answer has points
+            if ($answer->points > 0) {
+                $courseMember = \App\Models\CourseMember::where('course_id', $lesson->course_id)
+                    ->where('user_id', $answer->user_id)
+                    ->first();
+                
+                if ($courseMember) {
+                    $courseMember->achieved_score -= $answer->points;
+                    $courseMember->save();
+                }
+            }
+
+            foreach ($answer->images as $image) {
+                Storage::disk('public')->delete('images/courses/assignments/answers/'. $image->filename);
+            }
+            $answer->images()->delete();
+        }
+        $assignment->answers()->delete();
+
+        // Delete assignment images
+        foreach ($assignment->images as $image) {
+            Storage::disk('public')->delete('images/lessons/assignments/'.$image->image_url);
+        }
+        $assignment->images()->delete();
+
+        // Decrement Course total score
+        if ($lesson->course) {
+            $lesson->course->decrement('total_score', $assignment->points);
+        }
+
+        $assignment->delete();
+
+        return response()->json(['success' => true], 200);
     }
 }

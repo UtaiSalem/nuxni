@@ -8,6 +8,7 @@ use App\Http\Resources\Learn\Course\lessons\TopicResource;
 use App\Http\Resources\Learn\Course\info\CourseResource;
 use App\Http\Resources\Learn\Course\assignments\AssignmentResource;
 use App\Http\Resources\Learn\Course\lessons\LessonCommentResource;
+use App\Http\Resources\Learn\Course\questions\QuestionResource;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class LessonResource extends JsonResource
@@ -50,7 +51,20 @@ class LessonResource extends JsonResource
             'topics'                => TopicResource::collection($this->topics),
             'created_at'            => $this->created_at->format('Y-m-d H:i:s'),
             'created_at_for_humans' => $this->created_at->diffForHumans(),
-            // 'assignments'   => AssignmentResource::collection($this->assignments),
+            'assignments'           => AssignmentResource::collection(
+                $this->assignments->filter(function ($assignment) {
+                    // Show if user is course creator/admin
+                    if (auth()->id() === $this->course->user_id) {
+                        return true;
+                    }
+                    // Show if start_date is null (immediate) or in the past
+                    if (!$assignment->start_date || $assignment->start_date <= now()) {
+                        return true;
+                    }
+                    return false;
+                })
+            ),
+            'questions' => QuestionResource::collection($this->questions),
         ];
     }
 }

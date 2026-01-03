@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Resources\Learn\Course;
+namespace App\Http\Resources\Learn\Course\assignments;
 
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use App\Http\Resources\AssignmentAnswerResource;
+use App\Http\Resources\Learn\Course\assignments\AssignmentAnswerResource;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class AssignmentResource extends JsonResource
@@ -16,10 +16,22 @@ class AssignmentResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $courseUserId   = $this->assignmentable->user_id;
+        $courseUserId = $this->assignmentable->user_id;
+        $isCreator = false;
+        
+        if ($this->assignmentable_type === 'App\Models\Lesson') {
+             // Check if user is lesson creator OR course creator
+             if ($this->assignmentable->user_id === auth()->id() || $this->assignmentable->course->user_id === auth()->id()) {
+                 $isCreator = true;
+             }
+        } elseif ($this->assignmentable_type === 'App\Models\Course') {
+             if ($this->assignmentable->user_id === auth()->id()) {
+                 $isCreator = true;
+             }
+        }
 
-        if ($courseUserId === auth()->id()) {
-            $answers = $this->answers;
+        if ($isCreator) {
+            $answers = []; // Optimization: Instructors fetch answers via separate endpoint
         }else{
             $answers = $this->answers->where('user_id', auth()->id());
         }
@@ -33,10 +45,11 @@ class AssignmentResource extends JsonResource
             'description'           => $this->description,
             'images'                => $this->images,
             'answers'               => AssignmentAnswerResource::collection($answers),
-            'due_date'              => Carbon::parse($this->due_date)->toDateTimeString(),
-            'start_date'            => Carbon::parse($this->start_date)->toDateTimeString(),
-            'end_date'              => Carbon::parse($this->end_date)->toDateTimeString(),
+            'due_date'              => $this->due_date ? Carbon::parse($this->due_date)->toIso8601String() : null,
+            'start_date'            => $this->start_date ? Carbon::parse($this->start_date)->toIso8601String() : null,
+            'end_date'              => $this->end_date ? Carbon::parse($this->end_date)->toIso8601String() : null,
             'points'                => $this->points,
+            'passing_score'         => $this->passing_score,
             'increase_points'       => $this->increase_points,
             'decrease_points'       => $this->decrease_points,
             'assignment_type'       => $this->assignment_type,

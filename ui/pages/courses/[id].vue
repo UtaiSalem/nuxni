@@ -6,10 +6,14 @@ definePageMeta({
   middleware: 'auth'
 })
 
+// Define imports locally to ensure availability
+import { useCourseMemberStore } from '~/stores/courseMember'
+
 const route = useRoute()
 const api = useApi()
 const courseStore = useCourseStore()
 const courseGroupStore = useCourseGroupStore()
+const courseMemberStore = useCourseMemberStore()
 
 // State
 const course = ref<any>(null)
@@ -29,7 +33,13 @@ const fetchCourse = async (forceRefresh = false) => {
     course.value = courseStore.currentCourse
     academy.value = courseStore.academy
     isCourseAdmin.value = courseStore.isCourseAdmin
+    // We should also try to recover member state from store if possible, or refetch if missing
+    if (courseMemberStore.member) {
+         courseMemberOfAuth.value = courseMemberStore.member
+    }
+    
     isLoading.value = false
+    // Still fetching fresh member data in background might be good practice, but respecting cache logic for now.
     return
   }
 
@@ -50,6 +60,9 @@ const fetchCourse = async (forceRefresh = false) => {
       courseStore.setAcademy(response.academy)
       courseStore.setIsCourseAdmin(response.isCourseAdmin)
       courseGroupStore.setGroups(response.courseGroups || [], courseId.value)
+      
+      // Set Auth Member Store
+      courseMemberStore.setMember(response.courseMemberOfAuth)
     }
   } catch (err: any) {
     error.value = 'ไม่สามารถโหลดข้อมูลรายวิชาได้'

@@ -27,6 +27,7 @@ class Assignment extends Model
         'increase_points' => 'integer',
         'decrease_points' => 'integer',
         'points' => 'integer',
+        'passing_score' => 'integer',
         'graded_score' => 'integer',
     ];
 

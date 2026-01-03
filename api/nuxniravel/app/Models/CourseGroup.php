@@ -14,7 +14,17 @@ class CourseGroup extends Model
 {
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'user_id',
+        'course_id',
+        'name',
+        'description',
+        'image_url',
+        'status',
+        'auto_accept_member',
+        'privacy',
+        'cover',
+    ];
 
     public function course(): BelongsTo
     {

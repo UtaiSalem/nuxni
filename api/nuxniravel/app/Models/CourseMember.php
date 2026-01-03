@@ -33,6 +33,7 @@ class CourseMember extends Model
             'enrollment_date' => 'datetime',
             'completion_date' => 'datetime',
             'access_expiry_date' => 'datetime',
+            'last_accessed_at' => 'datetime',
         ];
     }
 

@@ -11,6 +11,8 @@ import PeopleMayKnowWidget from '~/components/widgets/PeopleMayKnowWidget.vue'
 import PendingFriendsWidget from '~/components/widgets/PendingFriendsWidget.vue'
 import DonatesWidget from '~/components/widgets/DonatesWidget.vue'
 import AdvertisesWidget from '~/components/widgets/AdvertisesWidget.vue'
+import RecentlyViewedCoursesWidget from '~/components/widgets/RecentlyViewedCoursesWidget.vue'
+import PopularCoursesWidget from '~/components/widgets/PopularCoursesWidget.vue'
 
 definePageMeta({
   layout: false,
@@ -378,6 +380,8 @@ onUnmounted(() => {
       <ReactionsWidget />
 
       <!-- Self-loading sidebar widgets -->
+      <PopularCoursesWidget />
+      <RecentlyViewedCoursesWidget />
       <PeopleMayKnowWidget />
       <PendingFriendsWidget />
       <DonatesWidget />

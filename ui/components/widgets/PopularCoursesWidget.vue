@@ -1,50 +1,78 @@
-<script setup>
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 
-const courses = ref([
-  {
-    id: 1,
-    title: 'WordPress Online Video Course',
-    image: '/images/course-1.jpg',
-    price: '$19/M',
-    tag: 'Free',
-    link: '/courses/wordpress'
-  },
-  {
-    id: 2,
-    title: 'Node JS Online Video Course',
-    image: '/images/course-2.jpg',
-    price: '$29/M',
-    tag: 'Premium',
-    link: '/courses/nodejs'
-  }
-])
+const api = useApi()
+const popularCourses = ref([])
+const isLoading = ref(true)
+
+const config = useRuntimeConfig()
+const fetchPopularCourses = async () => {
+    isLoading.value = true
+    try {
+        const res = await api.get('/api/courses/popular') as any
+        if (res.success) {
+            popularCourses.value = res.courses
+        }
+    } catch (error) {
+        console.error('Failed to fetch popular courses', error)
+    } finally {
+        isLoading.value = false
+    }
+}
+
+onMounted(() => {
+    fetchPopularCourses()
+})
 </script>
 
 <template>
-  <div class="vikinger-card">
-    <h4 class="text-sm font-semibold mb-4 flex items-center gap-2 text-gray-700 dark:text-gray-300">
-      <Icon icon="fluent:fire-24-filled" class="w-4 h-4 text-orange-500" />
-      Popular Courses
-    </h4>
-    <ul class="space-y-3">
-      <li v-for="course in courses" :key="course.id" class="flex gap-3">
-        <figure class="relative w-20 h-16 flex-shrink-0 rounded-lg overflow-hidden">
-          <img :src="course.image" :alt="course.title" class="w-full h-full object-cover" />
-          <span class="absolute top-1 right-1 px-2 py-0.5 text-xs font-bold rounded" 
-                :class="course.tag === 'Free' ? 'bg-green-500 text-white' : 'bg-vikinger-purple text-white'">
-            {{ course.tag }}
-          </span>
-        </figure>
-        <div class="flex-1 min-w-0">
-          <h5 class="text-sm font-semibold text-gray-800 dark:text-white mb-1 line-clamp-2">
-            <NuxtLink :to="course.link" class="hover:text-vikinger-purple transition-colors">
-              {{ course.title }}
-            </NuxtLink>
-          </h5>
-          <span class="text-sm font-bold text-vikinger-purple">{{ course.price }}</span>
+  <div class="bg-white dark:bg-vikinger-dark-200 rounded-xl p-4 shadow-sm mb-6">
+    <h3 class="font-semibold text-gray-900 dark:text-white mb-4">คอร์สยอดนิยม</h3>
+    
+    <div v-if="isLoading" class="space-y-3">
+        <div v-for="i in 3" :key="i" class="flex gap-3 animate-pulse">
+             <div class="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-lg shrink-0"></div>
+             <div class="flex-1 space-y-2 py-1">
+                 <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                 <div class="h-2 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+             </div>
         </div>
-      </li>
-    </ul>
+    </div>
+
+    <div v-else-if="popularCourses.length > 0" class="space-y-4">
+        <NuxtLink 
+            v-for="course in popularCourses" 
+            :key="course.id"
+            :to="`/courses/${course.id}`"
+            class="flex items-start gap-3 group hover:bg-gray-50 dark:hover:bg-vikinger-dark-100 p-2 -mx-2 rounded-lg transition-colors"
+        >
+            <div class="relative shrink-0 w-12 h-12 mt-1">
+                <img 
+                    :src="course.cover ? `${config.public.apiBase}/storage/images/courses/covers/${course.cover}` : 'https://via.placeholder.com/150'" 
+                    :alt="course.name"
+                    class="w-full h-full object-cover rounded-lg shadow-sm"
+                />
+            </div>
+            <div class="flex-1 min-w-0">
+                <h4 class="text-sm font-medium text-gray-900 dark:text-white line-clamp-2 leading-tight group-hover:text-vikinger-purple transition-colors mb-1">
+                    {{ course.name }}
+                </h4>
+                <div class="flex items-center justify-between">
+                     <span class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        {{ course.user ? course.user.name : (course.instructor ? course.instructor.name : 'Unknown') }}
+                     </span>
+                </div>
+            </div>
+             <div class="flex items-center justify-center text-gray-400 group-hover:text-vikinger-purple transition-colors mt-2">
+                <Icon icon="fluent:bookmark-24-regular" class="w-5 h-5" />
+            </div>
+        </NuxtLink>
+    </div>
+
+    <div v-else class="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
+        <Icon icon="fluent:book-off-20-regular" class="w-8 h-8 mx-auto mb-2 opacity-50" />
+        <p>ยังไม่มีคอร์สยอดนิยม</p>
+    </div>
   </div>
 </template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
 import { useApi } from '~/composables/useApi'
+import ContentLoader from '~/PlearndComponents/accessories/ContentLoader.vue'
 import AttendancesTable from '~/components/course/AttendancesTable.vue'
 import StudentAttendanceTable from '~/components/course/StudentAttendanceTable.vue'
 import Swal from 'sweetalert2'
@@ -748,13 +749,7 @@ onUnmounted(() => {
     </div>
     
     <!-- Loading with spinner -->
-    <div v-if="loading" class="flex flex-col items-center justify-center py-16">
-      <div class="relative">
-        <div class="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-        <Icon icon="fluent:calendar-24-regular" class="w-8 h-8 text-blue-600 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
-      </div>
-      <p class="mt-4 text-gray-500 dark:text-gray-400 font-medium">กำลังโหลดข้อมูล...</p>
-    </div>
+    <ContentLoader v-if="loading" />
     
     <!-- Attendances Table for Admin -->
     <AttendancesTable

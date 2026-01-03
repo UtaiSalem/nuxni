@@ -25,9 +25,54 @@ use App\Http\Resources\Learn\Course\quizzes\CourseQuizResource;
 use App\Http\Resources\Learn\Course\progress\CourseMemberGradeProgressResource;
 use App\Http\Resources\Learn\Course\groups\CourseGroupResource;
 use App\Http\Resources\Learn\Course\members\CourseMemberResource;
+use App\Models\RecentlyViewedCourse;
 
 class CourseController extends Controller
 {
+    public function getRecentCourses(Request $request)
+    {
+        $user = auth()->user();
+        
+        // Get the most recently viewed course IDs
+        $recentCourseIds = RecentlyViewedCourse::where('user_id', $user->id)
+            ->orderBy('updated_at', 'desc')
+            ->take(5)
+            ->pluck('course_id');
+            
+        if ($recentCourseIds->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'courses' => [],
+            ]);
+        }
+        
+        // Fetch the course objects, preserving the order
+        // MySQL FIELD() function usage for custom ordering
+        $courses = Course::whereIn('id', $recentCourseIds)
+            ->orderByRaw("FIELD(id, " . implode(',', $recentCourseIds->toArray()) . ")")
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'courses' => CourseResource::collection($courses),
+        ]);
+    }
+
+    public function getPopularCourses()
+    {
+        // Get top 5 courses by member count
+        $courses = Course::with('user')
+            ->withCount('courseMembers')
+            ->orderBy('course_members_count', 'desc')
+            ->take(5)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'courses' => CourseResource::collection($courses),
+        ]);
+    }
+
     public function index()
     {
         // $courses = $activities = $this->getMoreCourses();
@@ -184,6 +229,15 @@ class CourseController extends Controller
 
     public function show(Course $course)
     {
+        // Update recently viewed course if authenticated
+        $user = auth()->user();
+        if ($user) {
+            RecentlyViewedCourse::updateOrInsert(
+                ['user_id' => $user->id, 'course_id' => $course->id],
+                ['updated_at' => now()]
+            );
+        }
+
         return to_route('course.feeds', $course->id);
     }
 

@@ -15,8 +15,10 @@ class LessonCommentReactionController extends Controller
         $this->plearndAdmin = User::find(1);
     }
 
-    public function toggleLike(LessonComment $lesson_comment)
+    public function toggleLike($lesson, $lesson_comment)
     {
+        $lesson_comment = LessonComment::findOrFail($lesson_comment);
+        
         $userId = auth()->id();
         $hasLiked = $lesson_comment->likeComment()->where('user_id', $userId)->exists();
         $hasDisliked = $lesson_comment->dislikeComment()->where('user_id', $userId)->exists();
@@ -61,8 +63,10 @@ class LessonCommentReactionController extends Controller
         ]);
     }
 
-    public function toggleDislike(LessonComment $lesson_comment)
+    public function toggleDislike($lesson, $lesson_comment)
     {
+        $lesson_comment = LessonComment::findOrFail($lesson_comment);
+        
         $userId = auth()->id();
         $hasLiked = $lesson_comment->likeComment()->where('user_id', $userId)->exists();
         $hasDisliked = $lesson_comment->dislikeComment()->where('user_id', $userId)->exists();

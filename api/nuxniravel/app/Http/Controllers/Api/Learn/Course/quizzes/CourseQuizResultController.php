@@ -7,8 +7,6 @@ use App\Models\Course;
 use App\Models\CourseQuiz;
 use Illuminate\Http\Request;
 use App\Models\CourseQuizResult;
-use App\Http\Requests\StoreCourseQuizResultRequest;
-use App\Http\Requests\UpdateCourseQuizResultRequest;
 use Illuminate\Support\Facades\DB;
 
 class CourseQuizResultController extends Controller
@@ -29,7 +27,8 @@ class CourseQuizResultController extends Controller
             $quizResult->update([
                 'status'        => 0,
                 'started_at'    => date('Y-m-d H:i:s'),
-                'completed_at'  => $request->completed_at,
+                // 'completed_at'  => $request->completed_at, // Reset completion on new start?
+                'completed_at'  => null,
             ]);
 
             return response()->json([
@@ -52,6 +51,29 @@ class CourseQuizResultController extends Controller
             ], 201);
         }
     
+    }
+
+    public function update(Course $course, CourseQuiz $quiz, CourseQuizResult $result, Request $request)
+    {
+        // Ensure the result belongs to the user
+        if ($result->user_id !== auth()->id()) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $data = [
+            'completed_at' => now(),
+        ];
+
+        if ($request->has('duration')) {
+            $data['duration'] = $request->duration;
+        }
+
+        $result->update($data);
+
+        return response()->json([
+            'success' => true,
+            'quizResult' => $result
+        ]);
     }
 
 

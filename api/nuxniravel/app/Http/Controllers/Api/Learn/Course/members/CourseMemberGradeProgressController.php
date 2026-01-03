@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CourseResource;
 use App\Http\Resources\LessonResource;
-use App\Http\Resources\AssignmentResource;
+use App\Http\Resources\Learn\Course\assignments\AssignmentResource;
 use App\Http\Resources\CourseQuizResource;
 use App\Http\Resources\CourseGroupResource;
 use App\Http\Resources\CourseMemberResource;

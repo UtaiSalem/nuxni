@@ -11,7 +11,9 @@ use App\Models\LessonImage;
 use App\Models\LessonComment;
 use App\Models\LessonDislike;
 use App\Models\LessonBookmark;
+use App\Models\LessonProgress;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
@@ -101,6 +103,40 @@ class Lesson extends Model
     
     public function getComments()
     {
-        return $this->comments()->latest()->limit(3)->get();
+        return $this->comments()->whereNull('parent_id')->latest()->limit(3)->get();
+    }
+
+    public function progress(): HasMany
+    {
+        return $this->hasMany(LessonProgress::class);
+    }
+
+    /**
+     * Get progress for a specific user
+     */
+    public function userProgress(User $user): ?LessonProgress
+    {
+        return $this->progress()->where('user_id', $user->id)->first();
+    }
+
+    /**
+     * Get or create progress for a user
+     */
+    public function getOrCreateProgress(User $user): LessonProgress
+    {
+        return $this->progress()->firstOrCreate(
+            ['user_id' => $user->id],
+            ['status' => LessonProgress::STATUS_NOT_STARTED]
+        );
+    }
+
+    /**
+     * Check if lesson is completed by user
+     */
+    public function isCompletedBy(User $user): bool
+    {
+        $progress = $this->userProgress($user);
+        return $progress && $progress->isCompleted();
     }
 }
+

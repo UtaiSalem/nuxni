@@ -32,6 +32,7 @@ class TopicQuestionController extends \App\Http\Controllers\Controller
     public function store(Topic $topic, Request $request)
     {
         $question = $topic->questions()->create([
+            'course_id' => $topic->course_id,
             'user_id' => auth()->id(),
             'text' => $request->text,
             'points' => $request->points,
@@ -42,11 +43,11 @@ class TopicQuestionController extends \App\Http\Controllers\Controller
             $fileNames = [];
             foreach ($images as $image) {
                 $fileName = uniqid() . '.' . $image->getClientOriginalExtension();
-                $image_url = Storage::disk('public')->putFileAs('images/topics/questions', $image, $fileName);
+                $image_url = Storage::disk('public')->putFileAs('images/courses/quizzes/questions', $image, $fileName);
                 $fileNames[] = $fileName;
 
                 $question->images()->create([
-                    'image_url' => $image_url
+                    'filename' => $fileName
                 ]);
             }
         }

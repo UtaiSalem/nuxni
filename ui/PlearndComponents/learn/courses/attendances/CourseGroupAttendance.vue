@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue';
 import { usePage } from "@inertiajs/vue3";
 import { Icon } from '@iconify/vue';
 
-import VueDatePicker from '@vuepic/vue-datepicker';
+import { VueDatePicker } from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css'
 
 import StaggeredFade from '@/PlearndComponents/accessories/StaggeredFade.vue';
@@ -14,7 +14,11 @@ const props = defineProps({
     groups: Object,
 });
 
-const activeGroupTab = ref(usePage().props.courseMemberOfAuth ? usePage().props.courseMemberOfAuth.last_accessed_group_tab : 0);
+const activeGroupTab = ref(
+    (usePage().props.courseMemberOfAuth && usePage().props.courseMemberOfAuth.last_accessed_group_tab < (props.groups?.length || 0))
+    ? usePage().props.courseMemberOfAuth.last_accessed_group_tab 
+    : 0
+);
 const isLoadingAttendances = ref(false);
 const openCreateNewAttendanceForm = ref(false);
 const groupAttendances = ref([]);
@@ -128,7 +132,7 @@ const handleCancleCreateNewAttendance = () => {
 <template>
     <div class="w-full mx-auto ">
         <section class="max-w-full" aria-multiselectable="false">
-            <ul v-if="$page.props.isCourseAdmin" class="flex flex-wrap items-center border-b border-slate-200 plearnd-card" role="tablist">
+            <ul v-if="$page.props.isCourseAdmin && groups.length > 1" class="flex flex-wrap items-center border-b border-slate-200 plearnd-card" role="tablist">
                 <li v-for="(group, index) in groups" :key="index" class="w-1/2 md:w-1/3 lg:w-1/4" role="presentation ">
                     <button @click.prevent="setActiveGroupTab(index)"
                         class="inline-flex items-center justify-center w-full h-12 gap-2 px-6 mb-2 text-sm tracking-wide transition duration-300 border-b-2 rounded-t focus-visible:outline-none whitespace-nowrap hover:border-violet-600 focus:border-violet-700 text-violet-500 hover:text-violet-600 focus:text-violet-700 hover:bg-violet-50 focus:bg-violet-50 disabled:cursor-not-allowed disabled:border-slate-500 stroke-violet-500 hover:stroke-violet-600 focus:stroke-violet-700"

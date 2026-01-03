@@ -13,6 +13,10 @@ const props = defineProps({
   courseId: {
     type: [String, Number],
     required: true
+  },
+  groupId: {
+    type: [String, Number],
+    default: null
   }
 })
 
@@ -77,6 +81,7 @@ const createPost = async () => {
     const formData = new FormData()
     formData.append('content', postText.value)
     formData.append('privacy', selectedPrivacy.value)
+    if (props.groupId) formData.append('group_id', props.groupId)
     
     // Add images
     selectedImages.value.forEach((file, index) => {

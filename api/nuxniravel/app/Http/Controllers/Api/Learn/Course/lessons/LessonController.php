@@ -123,36 +123,45 @@ class LessonController extends Controller
     public function update(Course $course, Lesson $lesson, Request $request)
     {
         $validated = $request->validate([
-            'title'         => ['required','string'],
-            'description'   => ['nullable','string'],
-            'content'       => ['nullable','string'],
-            'youtube_url'   => ['nullable','string'],
-            'images.*'      => 'image|mimes:jpeg,png,jpg,gif,svg|max:4048|nullable',
+            'title'             => ['required','string'],
+            'description'       => ['nullable','string'],
+            'content'           => ['nullable','string'],
+            'youtube_url'       => ['nullable','string'],
+            'min_read'          => ['nullable','integer'],
+            'point_tuition_fee' => ['nullable','integer'],
+            'order'             => ['nullable','integer'],
+            'status'            => ['nullable','integer'],
+            'images.*'          => 'image|mimes:jpeg,png,jpg,gif,svg|max:4048|nullable',
         ]);
 
         $lesson->update([
-            'title'         => $request->title,
-            'description'   => $validated['description'] === null || $validated['description'] === "null" ? null : $validated['description'],
-            'content'       => $validated['content'] === null || $validated['content'] === "null" ? null : $validated['content'],
-            'youtube_url'   => $validated['youtube_url'] === null || $validated['youtube_url'] === "null" ? null : $validated['youtube_url'],
+            'title'             => $validated['title'],
+            'description'       => $validated['description'] === null || $validated['description'] === "null" ? null : $validated['description'],
+            'content'           => $validated['content'] === null || $validated['content'] === "null" ? null : $validated['content'],
+            'youtube_url'       => $validated['youtube_url'] === null || $validated['youtube_url'] === "null" ? null : $validated['youtube_url'],
+            'min_read'          => $validated['min_read'] ?? $lesson->min_read,
+            'point_tuition_fee' => $validated['point_tuition_fee'] ?? $lesson->point_tuition_fee,
+            'order'             => $validated['order'] ?? $lesson->order,
+            'status'            => $validated['status'] ?? $lesson->status,
         ]);
 
+        $lessonImages = [];
         if($request->hasFile('images')) {
             $images = $request->file('images');
-            $fileNames = [];
             foreach ($images as $image) {
                 $fileName = uniqid() . '.' . $image->getClientOriginalExtension();
-                $image_url = Storage::disk('public')->putFileAs('images/courses/lessons', $image, $fileName);
-                // $fileNames[] = $fileName;
+                Storage::disk('public')->putFileAs('images/courses/lessons', $image, $fileName);
 
                 $lessonImages[] = $lesson->images()->create([
-                    'filename' => $image_url
+                    'filename' => $fileName
                 ]);
             }
         }
+
         return response()->json([
-            // 'lesson' => new LessonResource($lesson),
-            'images' => $lessonImages ?? []
+            'success' => true,
+            'lesson' => new LessonResource($lesson->fresh()),
+            'images' => $lessonImages
         ], 200);
     }
 

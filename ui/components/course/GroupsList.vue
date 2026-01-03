@@ -5,11 +5,13 @@ interface Props {
   groups: any[]
   isCourseAdmin?: boolean
   courseId: string | number
+  joiningGroupId?: number | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
   groups: () => [],
-  isCourseAdmin: false
+  isCourseAdmin: false,
+  joiningGroupId: null
 })
 
 const emit = defineEmits<{
@@ -129,6 +131,7 @@ defineExpose({
         :group="group"
         :course-id="courseId"
         :is-course-admin="isCourseAdmin"
+        :loading="group.id === joiningGroupId"
         @click="navigateToGroup"
         @edit="emit('edit', group)"
         @join="emit('join', group.id)"

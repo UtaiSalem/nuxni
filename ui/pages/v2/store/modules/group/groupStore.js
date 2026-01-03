@@ -87,27 +87,40 @@ export const useGroupStore = defineStore('group', () => {
         setLoading('fetch_groups', true);
 
         try {
-            const data = await groupService.getCourseGroups(courseId, { page, perPage });
+            const response = await groupService.getCourseGroups(courseId, { page, perPage });
+            const groupsList = Array.isArray(response) ? response : (response.data || []);
+            const meta = response.meta || {};
 
             // Update groups Map
-            data.data.forEach(group => {
-                groups.value.set(group.id, group);
-            });
+            if (Array.isArray(groupsList)) {
+                groupsList.forEach(group => {
+                    groups.value.set(group.id, group);
+                });
+            }
 
             // Update pagination
-            pagination.value = {
-                page: data.current_page,
-                perPage: data.per_page,
-                total: data.total,
-            };
+            if (response.meta) {
+                 pagination.value = {
+                    page: response.meta.current_page,
+                    perPage: response.meta.per_page,
+                    total: response.meta.total,
+                };
+            } else if (response.current_page) {
+                // Handle different pagination format if necessary
+                 pagination.value = {
+                    page: response.current_page,
+                    perPage: response.per_page,
+                    total: response.total,
+                };
+            }
 
             // Cache the result
             setCache(cacheKey, {
-                groups: data.data,
+                groups: groupsList,
                 pagination: pagination.value,
             });
 
-            return data.data;
+            return groupsList;
         } catch (err) {
             error.value = err.message;
             throw err;

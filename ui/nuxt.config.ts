@@ -11,6 +11,13 @@ export default defineNuxtConfig({
     },
   },
 
+  // Configure Vue to recognize Vidstack custom elements
+  vue: {
+    compilerOptions: {
+      isCustomElement: (tag: string) => tag.startsWith('media-'),
+    },
+  },
+
   modules: ['@pinia/nuxt', '@nuxtjs/color-mode', '@nuxtjs/tailwindcss', '@nuxtjs/google-fonts', '@nuxtjs/i18n'],
 
   i18n: {
@@ -95,4 +102,7 @@ export default defineNuxtConfig({
     pageTransition: false,
   },
 
+  build: {
+    transpile: ['@vuepic/vue-datepicker'], // Force transpile for named export
+  },
 })

@@ -2,7 +2,11 @@
     import { ref, computed } from 'vue'
     import { Disclosure, DisclosureButton, DisclosurePanel} from '@headlessui/vue'
     import { Icon } from '@iconify/vue';
-    import { Link,router, usePage } from '@inertiajs/vue3';
+    import { Link, router } from '@inertiajs/vue3';
+    import { useAuthStore } from '@/stores/auth';
+
+    const authStore = useAuthStore();
+    const user = computed(() => authStore.user);
 
     defineProps({
         isDarkMode: Boolean
@@ -16,7 +20,7 @@
     ];
 
     const logout = () => {
-        router.post(route('logout'));
+        authStore.logout();
     };
 </script>
 
@@ -48,17 +52,17 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="hidden sm:flex sm:justify-center space-x-2 ">
+                            <div class="hidden sm:flex sm:justify-center space-x-2 " v-if="user">
                                 <div class="flex items-center space-x-2">
                                     <Icon  icon="noto:coin" class="h-6 w-6 rounded-full" aria-hidden="true" />
-                                    <span class="text-sm dark:text-gray-200">{{ $page.props.auth.user.pp.toLocaleString() }}</span>
+                                    <span class="text-sm dark:text-gray-200">{{ Number(user.points || 0).toLocaleString() }}</span>
                                 </div>
                                 <div class="flex items-center space-x-2">
                                     <Icon  icon="emojione:money-bag" class="h-6 w-6 rounded-full" aria-hidden="true" />
-                                    <span class="text-sm dark:text-gray-200">{{ $page.props.auth.user.wallet.toLocaleString() }}</span>
+                                    <span class="text-sm dark:text-gray-200">{{ Number(user.wallet || 0).toLocaleString() }}</span>
                                 </div>
                             </div>
-                            <div class="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0 space-x-2">
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0 space-x-2" v-if="user">
                                 <!-- <button type="button" @click.prevent="$emit('toggleDarkMode')"
                                     class="rounded-full bg-gray-200 p-[6px] text-gray-400 hover:text-white focus:outline-none ">
                                     <span class="sr-only">View notifications</span>
@@ -76,7 +80,7 @@
                                         <MenuButton
                                             class="flex rounded-full bg-gray-800 text-sm  ">
                                             <span class="sr-only">Open user menu</span>
-                                            <img class="h-[42px] w-[42px] rounded-full overflow-hidden border-2 dark:border-white border-gray-400" :src="$page.props.auth.user.profile_photo_url" alt="" />
+                                            <img class="h-[42px] w-[42px] rounded-full overflow-hidden border-2 dark:border-white border-gray-400" :src="user.profile_photo_url" alt="" />
                                         </MenuButton>
                                     </div>
                                     <transition enter-active-class="transition ease-out duration-200"
@@ -110,8 +114,8 @@
 
                                 <button id="dropdownAvatarNameButton" data-dropdown-toggle="dropdownAvatarName" class="flex items-center text-sm pr-2 font-medium text-gray-900 rounded-full hover:text-blue-600 dark:hover:text-blue-500 md:mr-0 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:text-white" type="button">
                                     <span class="sr-only">Open user menu</span>
-                                    <img class="w-8 h-8 mr-2 rounded-full" :src="$page.props.auth.user.profile_photo_url" alt="user photo">
-                                        <span class="hidden sm:block">{{  $page.props.auth.user.name }}</span>
+                                    <img class="w-8 h-8 mr-2 rounded-full" :src="user.profile_photo_url" alt="user photo">
+                                        <span class="hidden sm:block">{{  user.name }}</span>
                                     <svg class="w-2.5 h-2.5 ml-2.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
                                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
                                     </svg>
@@ -120,8 +124,8 @@
                                 <!-- Dropdown menu -->
                                 <div id="dropdownAvatarName" class="z-10 border hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700 dark:divide-gray-600">
                                     <div class="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                                        <div class="font-medium ">{{  $page.props.auth.user.name }}</div>
-                                        <div class="truncate">{{  $page.props.auth.user.email }}</div>
+                                        <div class="font-medium ">{{  user.name }}</div>
+                                        <div class="truncate">{{  user.email }}</div>
                                     </div>
 
                                     <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownInformdropdownAvatarNameButtonationButton">

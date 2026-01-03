@@ -51,11 +51,11 @@ export const useCourseStore = defineStore('course', () => {
 
     isLoading.value = true
     error.value = null
-    
+
     try {
       const api = useApi()
-      const response = await api.get(`/api/courses/${courseId}`)
-      
+      const response = await api.get(`/api/courses/${courseId}/feeds`)
+
       if (response.success) {
         setCourse(response.course)
         setAcademy(response.academy)

@@ -6,15 +6,20 @@ import { Icon } from '@iconify/vue';
 import Swal from 'sweetalert2';
 import axios from 'axios';
 
+import { useCourseMemberStore } from '~/stores/courseMember';
+import { useAuthStore } from '~/stores/auth';
+import { useCourseStore } from '~/stores/course';
+import { useCourseGroupStore } from '~/stores/courseGroup';
+
 const props = defineProps({
     group: {
         type: Object,
         required: true
     },
-    group_index: {
+    group_index: {      
         type: Number,
         required: true
-    },
+    },  
     courseMemberOfAuth: {
         type: Object,
         default: null
@@ -31,8 +36,17 @@ const emit = defineEmits([
 const isLoading = ref(false);
 const showGroupOptions = ref(false);
 
+const authStore = useAuthStore();
+const courseStore = useCourseStore();
+const courseGroupStore = useCourseGroupStore();
+const courseMemberStore = useCourseMemberStore();
+
+const currentMember = computed(() => {
+    return courseMemberStore.member || props.courseMemberOfAuth;
+});
+
 const authIsGroupMember = computed(() => {
-    return props.courseMemberOfAuth ? props.courseMemberOfAuth.group_member_status===1:false;
+    return currentMember.value ? currentMember.value.group_member_status===1 : false;
 })
 
 
@@ -49,7 +63,11 @@ async function handleGroupMemberRequest(){
             return;
         }
 
-        if (usePage().props.auth.user.pp < usePage().props.course.data.tuition_fees) {
+        // Use Auth Store for points check
+        const userPP = authStore.user?.pp || 0;
+        const tuitionFees = courseStore.course?.tuition_fees || 0;
+
+        if (userPP < tuitionFees) {
             Swal.fire({
                 icon: 'warning',
                 title: 'ขออภัย',
@@ -59,30 +77,48 @@ async function handleGroupMemberRequest(){
             return;
         }
 
-        isLoading.value = true;
+        // Check for moving group using Store
+        if (currentMember.value && currentMember.value.group_id && currentMember.value.group_id != props.group.id) {
+            const confirmResult = await Swal.fire({
+                icon: 'warning',
+                title: 'ยืนยันการย้ายกลุ่ม',
+                text: 'คุณเป็นสมาชิกกลุ่มอื่นอยู่แล้ว การเข้าร่วมกลุ่มใหม่จะเป็นการออกจากกลุ่มเดิมโดยอัตโนมัติ คุณต้องการดำเนินการต่อหรือไม่?',
+                showCancelButton: true,
+                confirmButtonText: 'ใช่, ย้ายกลุ่ม',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#f59e0b',
+                cancelButtonColor: '#6b7280'
+            });
 
-        const memberResp = await axios.post(`/courses/${usePage().props.course.data.id}/groups/${props.group.id}/members`);
+            if (!confirmResult.isConfirmed) {
+                return;
+            }
+        }
+
+        isLoading.value = true;
+        const courseId = courseStore.course?.id;
+
+        const memberResp = await axios.post(`/courses/${courseId}/groups/${props.group.id}/members`);
 
         if (memberResp.data.success) {
-            // อัพเดทข้อมูลสมาชิก
-            usePage().props.courseMemberOfAuth = memberResp.data.courseMemberOfAuth;
+            console.log('Join Response:', memberResp.data);
             
-            // อัพเดทข้อมูลกลุ่ม - safely check if groups data exists
-            if (memberResp.data.group && usePage().props.groups.data && usePage().props.groups.data[props.group_index]) {
-                usePage().props.groups.data[props.group_index].members = memberResp.data.group.members;
-                if (props.group) {
-                    props.group.members = memberResp.data.group.members;
-                }
+            // Handle Resource nesting (data wrapper)
+            let memberData = memberResp.data.courseMemberOfAuth;
+            if (memberData && memberData.data) {
+                memberData = memberData.data;
             }
+
+            // Update Member Store
+            courseMemberStore.setMember(memberData);
             
-            // อัพเดทจำนวนผู้เรียนในคอร์ส
-            if (memberResp.data.course && memberResp.data.course.enrolled_students !== undefined) {
-                usePage().props.course.data.enrolled_students = memberResp.data.course.enrolled_students;
+            // Refresh Group Store (Crucial for UI sync)
+            await courseGroupStore.fetchGroups(courseId, true);
+            
+            // Update Course Store status if needed
+            if (memberData.course_member_status == 1) {
+                // courseStore.setIsMember(true) // if exists
             }
-            
-            // อัพเดทสถานะสมาชิก
-            const isActiveMember = memberResp.data.courseMemberOfAuth.course_member_status == 1;
-            usePage().props.course.data.isMember = isActiveMember;
             
             Swal.fire({
                 icon: 'success',
@@ -131,7 +167,7 @@ async function handleUnmemberGroupRequest(){
             return;
         }
 
-        if (!props.courseMemberOfAuth || !props.courseMemberOfAuth.id) {
+        if (!currentMember.value || !currentMember.value.id) {
             Swal.fire({
                 icon: 'error',
                 title: 'ข้อผิดพลาด',
@@ -158,28 +194,25 @@ async function handleUnmemberGroupRequest(){
         }
 
         isLoading.value = true;
+        const courseId = courseStore.course?.id;
 
-        const unmemberGroupResp = await axios.delete(`/courses/${usePage().props.course.data.id}/groups/${props.group.id}/members/${props.courseMemberOfAuth.id}`);
+        const unmemberGroupResp = await axios.delete(`/courses/${courseId}/groups/${props.group.id}/members/${currentMember.value.id}`);
         
         if (unmemberGroupResp.data.success) {
-            // อัพเดทข้อมูลสมาชิก
-            usePage().props.courseMemberOfAuth = unmemberGroupResp.data.courseMember;
-            usePage().props.course.data.status = unmemberGroupResp.data.courseMember.status;
-            usePage().props.course.data.member_status = unmemberGroupResp.data.courseMember.member_status;
-            
-            // อัพเดทข้อมูลกลุ่ม - safely check if groups data exists
-            if (unmemberGroupResp.data.group && usePage().props.groups.data && usePage().props.groups.data[props.group_index]) {
-                usePage().props.groups.data[props.group_index].members = unmemberGroupResp.data.group.members;
+            // Update Member Store
+            let memberData = unmemberGroupResp.data.courseMember;
+            // Depending on controller, it might be raw or resource.
+            // Previous code used raw model, but if I updated it to Resource too...
+            // I did NOT update `unMemberGroup` in Controller to use Resource.
+            // So it probably returns raw model (no .data).
+            // But let's be safe.
+            if (memberData && memberData.data) {
+                memberData = memberData.data;
             }
+            courseMemberStore.setMember(memberData);
             
-            // อัพเดทจำนวนผู้เรียนในคอร์ส
-            if (unmemberGroupResp.data.course && unmemberGroupResp.data.course.enrolled_students !== undefined) {
-                usePage().props.course.data.enrolled_students = unmemberGroupResp.data.course.enrolled_students;
-            }
-
-            // อัพเดทสถานะสมาชิก
-            const isActiveMember = unmemberGroupResp.data.courseMember.course_member_status == 1;
-            usePage().props.course.data.isMember = isActiveMember;
+             // Refresh Group Store (Crucial for UI sync)
+            await courseGroupStore.fetchGroups(courseId, true);
 
             Swal.fire({
                 icon: 'success',
@@ -223,10 +256,12 @@ async function handleUnmemberGroupRequest(){
         class="sm:max-w-sm md:max-w-sm lg:max-w-sm xl:max-w-sm sm:mx-auto md:mx-auto lg:mx-auto xl:mx-auto bg-white shadow-lg hover:shadow-2xl rounded-xl text-gray-900 overflow-hidden transition-all duration-300 transform hover:-translate-y-1 border border-gray-100">
 
         <div class="relative rounded-t-xl h-40 overflow-hidden" v-if="props.group && typeof props.group === 'object'">
-            <img class="object-cover object-center w-full h-40 transition-transform duration-700 hover:scale-110"
-                :src="props.group.image_url ? '/storage/images/courses/groups/'+props.group.image_url :'/storage/images/courses/covers/default_cover.jpg'"
-                alt='Group Cover'>
-            <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+            <div class="block w-full h-full">
+                <img class="object-cover object-center w-full h-40 transition-transform duration-700"
+                    :src="props.group.image_url ? '/storage/images/courses/groups/'+props.group.image_url :'/storage/images/courses/covers/default_cover.jpg'"
+                    alt='Group Cover'>
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+            </div>
             <div class="absolute top-3 right-3 text-end" v-if="$page.props.isCourseAdmin">
                 <DotsDropdownMenu
                     @edit-model="emit('edit-course-group')"
@@ -246,9 +281,11 @@ async function handleUnmemberGroupRequest(){
         </div>
 
         <div class="text-center px-4 pt-5 pb-3" v-if="props.group && typeof props.group === 'object'">
-            <h2 class="text-xl font-bold text-gray-800 mb-2 hover:text-violet-600 transition-colors duration-300 cursor-default">
-                {{ props.group.name || 'ไม่มีชื่อกลุ่ม' }}
-            </h2>
+            <div>
+                <h2 class="text-xl font-bold text-gray-800 mb-2 transition-colors duration-300">
+                    {{ props.group.name || 'ไม่มีชื่อกลุ่ม' }}
+                </h2>
+            </div>
             <p class="text-sm text-gray-600 line-clamp-2 min-h-[40px]">
                 {{ props.group.description || 'ไม่มีคำอธิบาย' }}
             </p>
@@ -263,8 +300,8 @@ async function handleUnmemberGroupRequest(){
         </div>
 
         <ul class="py-3 px-4 flex items-center justify-center" v-if="props.group && typeof props.group === 'object'">
-            <li class="flex items-center gap-3 px-6 py-3 rounded-xl bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50 shadow-sm hover:shadow-md transition-all duration-300 hover:scale-105">
-                <div class="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-indigo-500 via-purple-500 to-blue-500 rounded-full shadow-lg animate-pulse-slow">
+            <li class="flex items-center gap-3 px-6 py-3 rounded-xl bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50 shadow-sm transition-all duration-300">
+                <div class="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-indigo-500 via-purple-500 to-blue-500 rounded-full shadow-lg">
                     <Icon icon="heroicons:user-group" class="w-6 h-6 text-white" />
                 </div>
                 <div class="flex flex-col">
@@ -277,7 +314,7 @@ async function handleUnmemberGroupRequest(){
         </ul>
 
         <div v-if="!$page.props.isCourseAdmin && props.group && typeof props.group === 'object'" class="p-4 border-t border-gray-100">
-            <div v-if="authIsGroupMember && props.courseMemberOfAuth.group_id === props.group.id" class="group relative cursor-pointer w-full">
+            <div v-if="authIsGroupMember && currentMember.group_id == props.group.id" class="group relative cursor-pointer w-full">
                 <button @click.prevent="showGroupOptions = !showGroupOptions" :disabled="isLoading"
                     class="w-full flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 shadow-md hover:shadow-lg font-medium text-white px-5 py-2.5 transition-all duration-300">
                     <Icon icon="uiw:loading" v-if="isLoading" class="animate-spin h-5 w-5"/>
@@ -294,14 +331,25 @@ async function handleUnmemberGroupRequest(){
                     </button>                       
                 </div>
             </div>
-            <button v-else-if="props.courseMemberOfAuth && props.courseMemberOfAuth.group_member_status===0 && props.courseMemberOfAuth.group_id === props.group.id" :disabled="isLoading"
+            <button v-else-if="currentMember && currentMember.group_member_status==0 && currentMember.group_id == props.group.id" :disabled="isLoading"
                 class="w-full flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-amber-400 via-yellow-500 to-orange-400 shadow-md font-medium text-white px-5 py-2.5 cursor-not-allowed relative overflow-hidden">
                 <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
                 <Icon icon="heroicons:clock" class="h-5 w-5 animate-pulse" />
                 <span>รอการตอบรับ</span>
             </button>
             <div v-else>
-                <button
+                <div v-if="currentMember && currentMember.group_id && currentMember.group_id != props.group.id" class="w-full">
+                    <button
+                        :disabled="isLoading"
+                        @click.prevent="handleGroupMemberRequest"
+                        class="w-full flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 via-orange-600 to-red-600 hover:from-amber-600 hover:via-orange-700 hover:to-red-700 shadow-md hover:shadow-xl font-semibold text-white px-5 py-2.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95 relative overflow-hidden group">
+                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                        <Icon icon="uiw:loading" v-if="isLoading" class="animate-spin h-5 w-5 relative z-10"/>
+                        <Icon v-else icon="heroicons:arrow-path-rounded-square" class="h-5 w-5 relative z-10" />
+                        <span class="relative z-10">ย้ายกลุ่ม</span>
+                    </button>
+                </div>
+                <button v-else
                     :disabled="isLoading"
                     @click.prevent="handleGroupMemberRequest"
                     class="w-full flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-500 via-indigo-600 to-purple-600 hover:from-blue-600 hover:via-indigo-700 hover:to-purple-700 shadow-md hover:shadow-xl font-semibold text-white px-5 py-2.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95 relative overflow-hidden group">

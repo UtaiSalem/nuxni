@@ -6,7 +6,7 @@ import { Icon } from '@iconify/vue';
 import Textarea from 'primevue/textarea';
 import { useDebounceFn } from '@vueuse/core';
 
-import VueDatePicker from '@vuepic/vue-datepicker';
+import { VueDatePicker } from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css'
 
 const props = defineProps({

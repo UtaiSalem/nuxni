@@ -17,6 +17,7 @@ class AssignmentAnswer extends Model
     use HasFactory;
 
     protected $guarded = [];
+    protected $fillable = ['user_id', 'content', 'points', 'submission_date', 'attachment_path', 'status', 'late_submission', 'feedback'];
 
     public function user(): BelongsTo
     {

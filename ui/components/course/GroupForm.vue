@@ -22,6 +22,7 @@ const courseGroupStore = useCourseGroupStore()
 const formData = ref({
   name: '',
   description: '',
+  privacy: 'public',
   color: '#3B82F6', // Default blue
   max_members: null
 })
@@ -49,6 +50,7 @@ onMounted(() => {
     formData.value = {
       name: props.group.name || '',
       description: props.group.description || '',
+      privacy: props.group.privacy || 'public',
       color: props.group.color || '#3B82F6',
       max_members: props.group.max_members || null
     }
@@ -161,6 +163,55 @@ const saveGroup = async () => {
       </div>
     </div>
 
+    <!-- Privacy -->
+    <div class="space-y-3">
+      <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+        <Icon icon="heroicons:lock-closed" class="w-5 h-5 text-gray-600 dark:text-gray-400" />
+        <span>ความเป็นส่วนตัว</span>
+      </label>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div 
+          @click="formData.privacy = 'public'"
+          class="cursor-pointer p-4 rounded-xl border-2 transition-all flex items-start gap-3"
+          :class="formData.privacy === 'public' 
+            ? 'border-teal-500 bg-teal-50 dark:bg-teal-900/20' 
+            : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'"
+        >
+          <div class="mt-1">
+            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center"
+              :class="formData.privacy === 'public' ? 'border-teal-500' : 'border-gray-400'"
+            >
+              <div v-if="formData.privacy === 'public'" class="w-2.5 h-2.5 rounded-full bg-teal-500"></div>
+            </div>
+          </div>
+          <div>
+            <h4 class="font-bold text-gray-900 dark:text-white mb-1">สาธารณะ</h4>
+            <p class="text-xs text-gray-500 dark:text-gray-400">ทุกคนสามารถเข้าร่วมกลุ่มได้โดยไม่ต้องรออนุมัติ</p>
+          </div>
+        </div>
+
+        <div 
+          @click="formData.privacy = 'private'"
+          class="cursor-pointer p-4 rounded-xl border-2 transition-all flex items-start gap-3"
+          :class="formData.privacy === 'private' 
+            ? 'border-teal-500 bg-teal-50 dark:bg-teal-900/20' 
+            : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'"
+        >
+          <div class="mt-1">
+            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center"
+              :class="formData.privacy === 'private' ? 'border-teal-500' : 'border-gray-400'"
+            >
+              <div v-if="formData.privacy === 'private'" class="w-2.5 h-2.5 rounded-full bg-teal-500"></div>
+            </div>
+          </div>
+          <div>
+            <h4 class="font-bold text-gray-900 dark:text-white mb-1">ส่วนตัว</h4>
+            <p class="text-xs text-gray-500 dark:text-gray-400">ต้องได้รับอนุญาตจากผู้ดูแลกลุ่มก่อนเข้าร่วม</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Max Members -->
     <div class="space-y-2">
       <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -199,6 +250,8 @@ const saveGroup = async () => {
           <h4 class="font-bold text-gray-900 dark:text-white">{{ formData.name || 'ชื่อกลุ่ม' }}</h4>
           <p class="text-sm text-gray-500 dark:text-gray-400">
             {{ formData.max_members ? `สูงสุด ${formData.max_members} คน` : 'ไม่จำกัดจำนวน' }}
+            <span class="mx-2">•</span>
+            <span>{{ formData.privacy === 'public' ? 'สาธารณะ' : 'ส่วนตัว' }}</span>
           </p>
         </div>
       </div>

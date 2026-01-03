@@ -12,10 +12,13 @@ import CourseEditPostModal from './CourseEditPostModal.vue'
 interface Props {
   courseId: string | number
   isCourseAdmin?: boolean
+  groupId?: string | number
+  initialTab?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  isCourseAdmin: false
+  isCourseAdmin: false,
+  initialTab: 'all'
 })
 
 const api = useApi()
@@ -38,7 +41,7 @@ const showEditModal = ref(false)
 const editingPost = ref<any>(null)
 
 // Active tab
-const activeTab = ref('all')
+const activeTab = ref(props.initialTab)
 
 // Tabs
 const tabs = [
@@ -67,7 +70,8 @@ const fetchPosts = async (reset = false) => {
   try {
     const params: any = { 
       page: page.value, 
-      per_page: perPage.value 
+      per_page: perPage.value,
+      group_id: props.groupId
     }
     
     // Add tab filter if not 'all'
@@ -75,7 +79,7 @@ const fetchPosts = async (reset = false) => {
       params.type = activeTab.value
     }
     
-    const response = await api.get(`/api/courses/${props.courseId}/posts`, { params })
+    const response = await api.get(`/api/courses/${props.courseId}/posts`, { params }) as any
     
     // Handle different response formats
     const data = response.data?.data || response.data || response.posts || []
@@ -197,6 +201,7 @@ onUnmounted(() => {
     <!-- Create Post Box -->
     <CourseCreatePostBox 
       :course-id="courseId" 
+      :group-id="groupId"
       @post-created="handlePostCreated" 
     />
     

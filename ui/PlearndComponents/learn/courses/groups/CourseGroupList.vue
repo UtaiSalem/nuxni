@@ -1,11 +1,12 @@
 <script setup>
-import { ref, computed } from 'vue';
-import { usePage } from '@inertiajs/vue3';
+import { ref, computed } from 'vue'; // Keeping for 'course' if needed, but transitioning away
 import { Icon } from '@iconify/vue';
 import Swal from 'sweetalert2';
-import axios from 'axios';
+
 
 import CourseGroupItem from '@/PlearndComponents/learn/courses/groups/CourseGroupItem.vue';
+import { useCourseGroupStore } from '~/stores/courseGroup';
+import { useCourseMemberStore } from '~/stores/courseMember';
 
 const props = defineProps({
     course: Object,
@@ -13,24 +14,26 @@ const props = defineProps({
     courseMemberOfAuth: Object
 });
 
-// Safe computed property for groups with validation
+const courseGroupStore = useCourseGroupStore();
+const courseMemberStore = useCourseMemberStore();
+
+// Safe computed property for groups from STORE
 const computedGroup = computed(() => {
-    const groupsData = usePage().props.groups?.data;
+    // Prefer store data over props
+    const groupsData = courseGroupStore.groups;
     
     // Validate and filter out invalid group entries
     if (!groupsData || !Array.isArray(groupsData)) {
-        console.warn('Groups data is not an array:', groupsData);
+        // Fallback to props if store is empty? No, store should be truth.
         return [];
     }
     
-    // Filter out any non-object entries (like boolean values)
+    // Filter out any non-object entries
     const validGroups = groupsData.filter((group, index) => {
         if (!group || typeof group !== 'object') {
-            console.warn(`Invalid group at index ${index}:`, group);
             return false;
         }
         if (!group.id) {
-            console.warn(`Group missing id at index ${index}:`, group);
             return false;
         }
         return true;
@@ -43,6 +46,7 @@ const emit = defineEmits([
     'add-new-group',
     'delete-group',
     'update-group',
+    'update:courseMemberOfAuth' // Added to allow updating parent if needed, though we use store now
 ]);
 
 // watch(()=>usePage().props.courseMemberOfAuth, () => {

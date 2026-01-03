@@ -1,14 +1,18 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
+import { usePage } from '@inertiajs/vue3'
+import Swal from 'sweetalert2'
 
 interface Props {
   group: any
   isCourseAdmin?: boolean
   courseId: string | number
+  loading?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  isCourseAdmin: false
+  isCourseAdmin: false,
+  loading: false
 })
 
 const emit = defineEmits<{
@@ -83,6 +87,32 @@ const formatNumber = (num: number | undefined | null) => {
 
 // Check if user is member
 const isMember = computed(() => !!props.group.groupMemberOfAuth)
+
+// Check if user is member of ANY group (from global state)
+const page = usePage()
+const courseMemberOfAuth = computed(() => page.props.courseMemberOfAuth as any)
+const isMemberOfOtherGroup = computed(() => {
+    return courseMemberOfAuth.value?.group_id && courseMemberOfAuth.value.group_id != props.group.id
+})
+
+const handleJoinClick = async () => {
+    if (isMemberOfOtherGroup.value) {
+        const result = await Swal.fire({
+            icon: 'warning',
+            title: 'ยืนยันการย้ายกลุ่ม',
+            text: 'คุณเป็นสมาชิกกลุ่มอื่นอยู่แล้ว การเข้าร่วมกลุ่มใหม่จะเป็นการออกจากกลุ่มเดิมโดยอัตโนมัติ คุณต้องการดำเนินการต่อหรือไม่?',
+            showCancelButton: true,
+            confirmButtonText: 'ใช่, ย้ายกลุ่ม',
+            cancelButtonText: 'ยกเลิก',
+            confirmButtonColor: '#f59e0b',
+            cancelButtonColor: '#6b7280'
+        })
+        
+        if (!result.isConfirmed) return
+    }
+    
+    emit('join', props.group.id)
+}
 </script>
 
 <template>
@@ -222,13 +252,19 @@ const isMember = computed(() => !!props.group.groupMemberOfAuth)
       </div>
 
       <!-- Join Button -->
+      <!-- Adjusted logic to use handleJoinClick and show Move Group -->
       <button
         v-if="!isMember && !isCourseAdmin"
-        @click.stop="emit('join', group.id)"
-        class="w-full py-3 bg-gradient-to-r from-purple-500 via-blue-500 to-purple-600 hover:from-purple-600 hover:via-blue-600 hover:to-purple-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2 group/btn"
+        @click.stop="handleJoinClick"
+        :disabled="loading"
+        class="w-full py-3 bg-gradient-to-r text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2 group/btn disabled:opacity-70 disabled:cursor-not-allowed"
+        :class="isMemberOfOtherGroup ? 
+            'from-amber-500 via-orange-600 to-red-600 hover:from-amber-600 hover:via-orange-700 hover:to-red-700' : 
+            'from-purple-500 via-blue-500 to-purple-600 hover:from-purple-600 hover:via-blue-600 hover:to-purple-700'"
       >
-        <Icon icon="heroicons:user-plus-solid" class="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
-        <span>Join Group!</span>
+        <Icon v-if="loading" icon="svg-spinners:ring-resize" class="w-5 h-5 animate-spin" />
+        <Icon v-else :icon="isMemberOfOtherGroup ? 'heroicons:arrow-path-rounded-square' : 'heroicons:user-plus-solid'" class="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
+        <span>{{ loading ? 'Processing...' : (isMemberOfOtherGroup ? 'Move Group' : 'Join Group!') }}</span>
       </button>
 
       <!-- Already Member -->

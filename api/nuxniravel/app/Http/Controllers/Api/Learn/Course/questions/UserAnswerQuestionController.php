@@ -69,14 +69,17 @@ class UserAnswerQuestionController extends Controller
             }
 
             // Create new answer since none exists
+            $selectedOption = \App\Models\QuestionOption::find($request->answer_id);
+            $isCorrect = $selectedOption && $selectedOption->is_correct;
+
             $userAnswerQuestion = UserAnswerQuestion::create([
                 'user_id' => auth()->id(),
                 'question_id' => $question->id,
                 'quiz_id' => $quiz->id,
                 'course_id' => $request->course_id,
-                'correct_option_id' => $question->correct_option_id,
+                'correct_option_id' => $question->correct_option_id, // Keep this for legacy or reference, or set to null if cleaner
                 'answer_id' => $request->answer_id,
-                'points' => $request->answer_id === $question->correct_option_id ? $question->points : 0,
+                'points' => $isCorrect ? $question->points : 0,
             ]);
 
             // Update quiz results and member scores
@@ -121,14 +124,18 @@ class UserAnswerQuestionController extends Controller
 
             $oldAnswer = $answer->answer_id;
             $newAnswer = $request->answer_id;
-            $correctAnswer = $question->correct_option_id;
-            $isOldAnswerCorrect = $oldAnswer === $correctAnswer;
-            $isNewAnswerCorrect = $newAnswer === $correctAnswer;
+            
+            // Logic change: Check if the options themselves are marked as correct
+            $oldOption = \App\Models\QuestionOption::find($oldAnswer);
+            $newOption = \App\Models\QuestionOption::find($newAnswer);
+            
+            $isOldAnswerCorrect = $oldOption && $oldOption->is_correct;
+            $isNewAnswerCorrect = $newOption && $newOption->is_correct;
 
             // Update the user's answer record
             $answer->update([
                 'answer_id' => $newAnswer,
-                'correct_option_id' => $correctAnswer,
+                'correct_option_id' => $question->correct_option_id, // Maintain legacy or use null
                 'points' => $isNewAnswerCorrect ? $question->points : 0,
                 'edit_count' => $answer->edit_count + 1,
             ]);
@@ -240,11 +247,11 @@ class UserAnswerQuestionController extends Controller
 
         $courseQuizResult->attempted_questions = $quiz_user_answers->count();
         $courseQuizResult->correct_answers = $quiz_user_answers->filter(function ($answer) {
-            return $answer->correct_option_id === $answer->answer_id;
+            return $answer->points > 0;
         })->count();
         
         $courseQuizResult->incorrect_answers = $quiz_user_answers->filter(function ($answer) {
-            return $answer->correct_option_id !== $answer->answer_id;
+            return $answer->points == 0;
         })->count();
   
         $courseQuizResult->score = $quiz_user_answers->sum('points');
@@ -272,11 +279,11 @@ class UserAnswerQuestionController extends Controller
 
         $courseQuizResult->attempted_questions = $quiz_user_answers->count();
         $courseQuizResult->correct_answers = $quiz_user_answers->filter(function ($answer) {
-            return $answer->correct_option_id === $answer->answer_id;
+            return $answer->points > 0;
         })->count();
         
         $courseQuizResult->incorrect_answers = $quiz_user_answers->filter(function ($answer) {
-            return $answer->correct_option_id !== $answer->answer_id;
+            return $answer->points == 0;
         })->count();
   
         // Don't recalculate score as it's already updated in the calling method

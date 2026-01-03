@@ -111,6 +111,14 @@ class CourseLessonController extends \App\Http\Controllers\Controller
             // Increment view count
             $lesson->increment('view_count');
 
+            // Update recently viewed course
+            if ($user && $user->id) {
+                \App\Models\RecentlyViewedCourse::updateOrInsert(
+                    ['user_id' => $user->id, 'course_id' => $course->id],
+                    ['updated_at' => now()]
+                );
+            }
+
             return response()->json([
                 'success' => true,
                 'course' => new CourseResource($course),
@@ -152,9 +160,9 @@ class CourseLessonController extends \App\Http\Controllers\Controller
                 'description' => 'nullable|string',
                 'content' => 'nullable|string',
                 'youtube_url' => 'nullable|url',
-                'order' => 'required|integer|min:0',
-                'min_read' => 'required|integer|min:0',
-                'point_tuition_fee' => 'required|numeric|min:0',
+                'order' => 'nullable|integer|min:0',
+                'min_read' => 'nullable|integer|min:0',
+                'point_tuition_fee' => 'nullable|numeric|min:0',
                 'status' => 'required|in:0,1', // 0=draft, 1=published
                 'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120', // 5MB max
             ]);
@@ -163,12 +171,12 @@ class CourseLessonController extends \App\Http\Controllers\Controller
             $lesson = $course->courseLessons()->create([
                 'user_id' => auth()->id(),
                 'title' => $validated['title'],
-                'description' => $validated['description'],
-                'content' => $validated['content'],
-                'youtube_url' => $validated['youtube_url'],
-                'order' => $validated['order'],
-                'min_read' => $validated['min_read'],
-                'point_tuition_fee' => $validated['point_tuition_fee'],
+                'description' => $validated['description'] ?? null,
+                'content' => $validated['content'] ?? null,
+                'youtube_url' => $validated['youtube_url'] ?? null,
+                'order' => $validated['order'] ?? 0,
+                'min_read' => $validated['min_read'] ?? 1,
+                'point_tuition_fee' => $validated['point_tuition_fee'] ?? 0,
                 'status' => $validated['status'],
             ]);
 
@@ -266,9 +274,9 @@ class CourseLessonController extends \App\Http\Controllers\Controller
                 'description' => 'nullable|string',
                 'content' => 'nullable|string',
                 'youtube_url' => 'nullable|url',
-                'min_read' => 'required|integer|min:0',
-                'order' => 'required|integer|min:0',
-                'point_tuition_fee' => 'required|numeric|min:0',
+                'min_read' => 'nullable|integer|min:0',
+                'order' => 'nullable|integer|min:0',
+                'point_tuition_fee' => 'nullable|numeric|min:0',
                 'status' => 'required|in:0,1',
                 'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
             ]);
@@ -279,9 +287,9 @@ class CourseLessonController extends \App\Http\Controllers\Controller
                 'description' => $validated['description'] === "null" ? null : $validated['description'],
                 'content' => $validated['content'] === "null" ? null : $validated['content'],
                 'youtube_url' => $validated['youtube_url'] === "null" ? null : $validated['youtube_url'],
-                'min_read' => $validated['min_read'],
-                'order' => $validated['order'],
-                'point_tuition_fee' => $validated['point_tuition_fee'],
+                'min_read' => $validated['min_read'] ?? 1,
+                'order' => $validated['order'] ?? 0,
+                'point_tuition_fee' => $validated['point_tuition_fee'] ?? 0,
                 'status' => $validated['status']
             ]);
 

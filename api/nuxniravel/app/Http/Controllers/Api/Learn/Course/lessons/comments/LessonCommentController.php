@@ -11,10 +11,15 @@ use App\Http\Resources\Learn\Course\lessons\LessonCommentResource;
 
 class LessonCommentController extends Controller
 {
-    //get all comments resource collections for a lesson by lesson id and paginate them
+    //get all top-level comments resource collections for a lesson by lesson id and paginate them
     public function index(Lesson $lesson)
     {
-        return LessonCommentResource::collection($lesson->comments()->latest()->paginate(10));
+        return LessonCommentResource::collection(
+            $lesson->comments()
+                ->whereNull('parent_id')
+                ->latest()
+                ->paginate(10)
+        );
     }
 
     public function store(Lesson $lesson, Request $request)
@@ -22,11 +27,13 @@ class LessonCommentController extends Controller
         $validatedData = $request->validate([
             'content' => 'nullable|string',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'parent_id' => 'nullable|exists:lesson_comments,id',
         ]);
     
         $newComment = $lesson->comments()->create([
             'user_id' => auth()->id(),
-            'content' => $validatedData['content']
+            'content' => $validatedData['content'],
+            'parent_id' => $validatedData['parent_id'] ?? null,
         ]);
     
         if($request->hasFile('images')) {
@@ -52,20 +59,28 @@ class LessonCommentController extends Controller
     // destroy a comment by comment id
     public function destroy(Lesson $lesson, LessonComment $comment)
     {
-        if ($comment->images->count() > 0) {
-            foreach ($comment->images() as $image) {
+        // Delete images if any
+        $images = $comment->lessonCommentImages;
+        if ($images && $images->count() > 0) {
+            foreach ($images as $image) {
                 Storage::disk('public')->delete('images/courses/lessons/comments/'. $image->filename);
                 $image->delete();
             }
         }
-        $comment->likes()->detach();
-        $comment->dislikes()->detach();
+        
+        // Detach likes and dislikes
+        $comment->likeComment()->detach();
+        $comment->dislikeComment()->detach();
 
+        // Delete the comment (cascade delete for replies is handled in Model)
         $comment->delete();
+        
+        // Decrement comment count
         $lesson->decrement('comment_count', 1);
 
         return response()->json([
            'success' => true,
+           'message' => 'ลบความคิดเห็นสำเร็จ',
         ]);
     }
 

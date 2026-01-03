@@ -74,7 +74,9 @@ interface WelcomeData {
 }
 
 const authStore = useAuthStore()
-const { data: welcomeData, pending, error } = await useFetch<WelcomeData>('/api/welcome')
+const { data: welcomeData, pending, error } = await useFetch<WelcomeData>('/api/welcome', {
+  baseURL: useRuntimeConfig().public.apiBase
+})
 
 // Helper function to get full avatar URL
 const getAvatarUrl = (avatar: string) => {
@@ -131,47 +133,71 @@ const getDayOfWeek = () => {
   todayDate.value = today.getDate()
 }
 
-const handleLinkToCreateDonate = () => {
+import Swal from 'sweetalert2'
+
+
+
+const handleLinkToCreateDonate = async () => {
+  if (!authStore.isAuthenticated) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'กรุณาเข้าสู่ระบบ',
+      text: 'คุณต้องเข้าสู่ระบบก่อนจึงจะสามารถให้การสนับสนุนได้',
+      confirmButtonText: 'ตกลง',
+      confirmButtonColor: '#3085d6',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        navigateTo('/auth')
+      }
+    })
+    return
+  }
+
   isCreateDonateLoading.value = true
-  // window.location.href = "/supports/donates/create";
-  // navigateTo('/supports/donates/create')
-  /*
-  // Swal.fire({
-  //   icon: 'info',
-  //   title: 'ขออภัย',
-  //   text: 'ระบบสนับสนุนทุนการเรียนรู้กำลังอยู่ในระหว่างการพัฒนา',
-  //   confirmButtonText: 'ตกลง',
-  // })
-  */
+  await navigateTo('/supports/donates/create')
   isCreateDonateLoading.value = false
 }
 
 const handleGetDonate = async (donateId: number, idx: number) => {
+  if (!authStore.isAuthenticated) {
+     Swal.fire({
+      icon: 'warning',
+      title: 'กรุณาเข้าสู่ระบบ',
+      text: 'คุณต้องเข้าสู่ระบบก่อนจึงจะสามารถรับการสนับสนุนได้',
+      confirmButtonText: 'ตกลง',
+      confirmButtonColor: '#3085d6',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        navigateTo('/auth')
+      }
+    })
+    return
+  }
+
   try {
     isCreateDonateLoading.value = true
-    // Assuming this endpoint exists or will be created.
-    // For now, let's keep the logic but maybe comment out the actual call or ensure the endpoint is there.
-    // The original code used axios.get(`/donates/${donateId}/get-donate`)
-    // We should use useFetch or $fetch
-
-    // const { data, error } = await useFetch(`/api/donates/${donateId}/get-donate`)
-    // For now, let's just simulate or leave as is but using $fetch
-
-    const response = (await $fetch(`/api/donates/${donateId}/get-donate`)) as any
+    
+    const response = (await $fetch(`/api/donates/${donateId}/get-donate`, {
+      baseURL: useRuntimeConfig().public.apiBase
+    })) as any
 
     if (response.success) {
-      /*
-      // Swal.fire({
+      Swal.fire({
         title: 'รับการสนับสนุนสำเร็จ',
-        text: 'คุณได้รับการสนับสนุนเรียบร้อยแล้ว' + '270' + 'แต้ม',
+        text: `คุณได้รับการสนับสนุนเรียบร้อยแล้ว ${response.donate_point || 270} แต้ม`,
         icon: 'success',
         showConfirmButton: false,
-        timer: 1200,
+        timer: 1500,
       })
-      */
 
       if (authStore.user) {
-        // authStore.user.pp += 270 // Update store if possible
+        // Assuming user.pp or user.wallet is the field. The legacy code used 'pp'.
+        // We'll update both if unsure, or check the interface. 
+        // Based on legacy: usePage().props.auth.user.pp += 270
+        // We will assert it exists or check type.
+         if (typeof (authStore.user as any).pp !== 'undefined') {
+            (authStore.user as any).pp += (response.donate_point || 270);
+         }
       }
 
       if (welcomeData.value && welcomeData.value.donates) {
@@ -183,18 +209,23 @@ const handleGetDonate = async (donateId: number, idx: number) => {
 
       isCreateDonateLoading.value = false
     } else {
-      /*
-      // Swal.fire({
-      //   title: 'เกิดข้อผิดพลาด',
-      //   text: 'ไม่สามารถรับการสนับสนุนได้',
-      //   icon: 'error',
-      //   showConfirm: false,
-      //   timer: 1200,
-      // })
-      */
+      Swal.fire({
+        title: 'เกิดข้อผิดพลาด',
+        text: response.message || 'ไม่สามารถรับการสนับสนุนได้',
+        icon: 'error',
+        showConfirmButton: false,
+        timer: 1500,
+      })
       isCreateDonateLoading.value = false
     }
-  } catch (error) {
+  } catch (error: any) {
+    console.error('Donate Error:', error)
+    Swal.fire({
+        title: 'เกิดข้อผิดพลาด',
+        text: error.data?.message || 'เกิดข้อผิดพลาดในการเชื่อมต่อ',
+        icon: 'error',
+        showConfirmButton: true,
+      })
     isCreateDonateLoading.value = false
   }
 }
@@ -315,10 +346,10 @@ const handleGetDonate = async (donateId: number, idx: number) => {
           </div>
         </div>
 
-        <div class="p-3 mb-4 font-medium min-w-32 min-h-48 animate-fade-in-up delay-200">
-          <div
-            class="flex-none w-32 text-center rounded-t shadow-2xl lg:rounded-t-none lg:rounded-l transform hover:scale-110 transition-all duration-300"
-          >
+        <div class="p-3 mb-4 font-medium min-w-40 min-h-48 animate-fade-in-up delay-200">
+            <div
+              class="flex-none w-40 text-center rounded-t shadow-2xl lg:rounded-t-none lg:rounded-l transform hover:scale-110 transition-all duration-300"
+            >
             <div
               class="block overflow-hidden text-center rounded-lg font-prompt shadow-xl hover:shadow-2xl"
             >

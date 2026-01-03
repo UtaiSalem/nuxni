@@ -7,7 +7,7 @@ use App\Models\Question;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
-use App\\Http\\Resources\\Learn\\Course\\questions\\QuestionResource;
+use App\Http\Resources\Learn\Course\questions\QuestionResource;
 
 class QuestionController extends Controller
 {

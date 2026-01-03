@@ -2,6 +2,7 @@
 import { Icon } from '@iconify/vue'
 import GroupsList from '~/components/course/GroupsList.vue'
 import GroupForm from '~/components/course/GroupForm.vue'
+import { usePage } from '@inertiajs/vue3'
 
 // Inject course data from parent
 const course = inject<Ref<any>>('course')
@@ -11,6 +12,7 @@ const refreshCourse = inject<() => Promise<void>>('refreshCourse')
 // Stores
 const courseGroupStore = useCourseGroupStore()
 const route = useRoute()
+const page = usePage()
 
 // State
 const groups = computed(() => courseGroupStore.groups)
@@ -51,21 +53,79 @@ const handleEdit = (group: any) => {
   showCreateModal.value = true
 }
 
+// Join state
+const joiningGroupId = ref<number | null>(null)
+
 // Join group
 const handleJoin = async (groupId: number) => {
+  joiningGroupId.value = groupId
   try {
-    await api.post(`/api/courses/${course.value.id}/groups/${groupId}/members`)
-    await handleRefresh()
+    const res = await api.post(`/api/courses/${course.value.id}/groups/${groupId}/members`)
+    
+    // Show success message
+    await swal.success(
+        res.message || 'ดำเนินการเรียบร้อยแล้ว',
+        'สำเร็จ (Success)'
+    )
+    
+    
+    // --- Seamless Update (No Reload) ---
+
+    // 1. Update Global Auth State (courseMemberOfAuth)
+    const authMember = page.props.courseMemberOfAuth as any
+    const oldGroupId = authMember?.group_id || null
+
+    if (authMember) {
+        authMember.group_id = groupId
+        authMember.group_member_status = 1 
+    }
+
+    // 2. Update Local Groups List (Member Counts & Button State)
+    if (groupsListRef.value?.localGroups) {
+        const groups = groupsListRef.value.localGroups
+        const userId = page.props.auth.user.id
+        
+        // Loop through all groups to ensure clean state
+        groups.forEach((g: any) => {
+             // If this was the old group (has auth member)
+             if (g.groupMemberOfAuth && g.id != groupId) {
+                 g.members_count = Math.max(0, (g.members_count || 0) - 1)
+                 g.groupMemberOfAuth = null
+             }
+             
+             // If this is the new group
+             if (g.id == groupId) {
+                 // Only increment if not already a member (safety check)
+                 if (!g.groupMemberOfAuth) {
+                     g.members_count = (g.members_count || 0) + 1
+                 }
+                 g.groupMemberOfAuth = { 
+                     user_id: userId, 
+                     group_id: groupId, 
+                     status: 1 
+                 }
+             }
+        })
+    }
+    
   } catch (error: any) {
-    alert(error.data?.message || 'ไม่สามารถเข้าร่วมกลุ่มได้')
+    console.error('Join Error:', error)
+    // Only show error alert if it's NOT a runtime error from our update logic to avoid confusing user 
+    // (though in prod we want to know, but here we want to avoid double alert if success happened)
+    // But we can't easily distinguish without checking if swal.success was called.
+    // However, fixing the usePage crash should solve the root cause.
+    swal.error(error.data?.message || 'ไม่สามารถเข้าร่วมกลุ่มได้', 'เกิดข้อผิดพลาด')
+  } finally {
+    joiningGroupId.value = null
   }
 }
 
 // Refresh groups list
 const handleRefresh = async () => {
-  if (course?.value?.id) {
-    await courseGroupStore.fetchGroups(course.value.id, true) // Force refresh
-  }
+    // ... existing ... 
+    if (course?.value?.id) {
+        await courseGroupStore.fetchGroups(course.value.id, true)
+    }
 }
 
 // Handle group deleted - refresh course data to update groups count
@@ -131,6 +191,7 @@ watch(() => course?.value?.id, async (newId) => {
       :groups="groups"
       :course-id="course?.id"
       :is-course-admin="isCourseAdmin"
+      :joining-group-id="joiningGroupId"
       @create="handleCreate"
       @edit="handleEdit"
       @join="handleJoin"

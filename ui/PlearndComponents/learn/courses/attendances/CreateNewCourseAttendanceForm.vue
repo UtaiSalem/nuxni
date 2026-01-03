@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { usePage } from "@inertiajs/vue3";
-import VueDatePicker from '@vuepic/vue-datepicker';
+import { VueDatePicker } from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css'
 import { Icon } from '@iconify/vue';
 

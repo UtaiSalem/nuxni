@@ -24,10 +24,7 @@ use App\Http\Resources\Learn\Course\members\CourseMemberResourceV2;
 
 class CourseMemberController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth:sanctum');
-    }
+
 
     public function index(Course $course, Request $request)
     {

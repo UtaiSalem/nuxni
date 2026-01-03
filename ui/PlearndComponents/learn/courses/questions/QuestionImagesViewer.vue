@@ -48,7 +48,7 @@ const handleDeleteImage = async (index) => {
 <template>
     <div class="flex flex-wrap justify-center mt-2">
       <div v-for="(image, qi_index) in images" :key="qi_index" class="my-1 relative  max-h-fit overflow-hidden">
-        <img :src="image.url" class="rounded-lg" alt="Question image" />
+        <img :src="image.full_url || image.url" class="rounded-lg" alt="Question image" />
         <div v-if="isDeleteLoading && deletingIndex === qi_index" 
              class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <Icon icon="eos-icons:loading" class="w-16 h-16 text-white animate-spin" />

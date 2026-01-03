@@ -6,7 +6,7 @@ use App\Models\Topic;
 use App\Models\Assignment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use App\Http\Resources\AssignmentResource;
+use App\Http\Resources\Learn\Course\assignments\AssignmentResource;
 
 class TopicAssignmentController extends \App\Http\Controllers\Controller
 {

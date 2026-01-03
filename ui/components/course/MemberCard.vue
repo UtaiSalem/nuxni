@@ -1,101 +1,225 @@
-<script setup lang="ts">
-import { Icon } from '@iconify/vue'
+<script setup>
+import { computed, toRef } from 'vue';
+import { usePage } from "@inertiajs/vue3";
+import { Icon } from '@iconify/vue';
 
-interface Props {
-  member: any
-  isCourseAdmin?: boolean
-  courseId: string | number
-}
+// ✅ Import composable
+import { useMemberProgress } from '@/composables/useMemberProgress';
+import DotsDropdownMenu from '@/PlearndComponents/accessories/DotsDropdownMenu.vue';
 
-const props = withDefaults(defineProps<Props>(), {
-  isCourseAdmin: false
-})
+const props = defineProps({
+    member: {
+      type: Object,
+      required: true,
+      default: () => ({})
+    },
+    dataIndex: {
+      type: Number,
+      default: 0
+    },
+});
 
-const emit = defineEmits<{
-  'edit': [member: any]
-  'remove': [memberId: number]
-  'click': [member: any]
-}>()
+const emit = defineEmits(['request-unmember-course']);
 
-// Get role badge
-const getRoleBadge = computed(() => {
-  switch (props.member.role) {
-    case 'teacher':
-    case 'admin':
-    case 'owner':
-      return { text: 'ผู้สอน', class: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400', icon: 'fluent:crown-24-filled' }
-    case 'assistant':
-    case 'co-teacher':
-      return { text: 'ผู้ช่วยสอน', class: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', icon: 'fluent:person-support-24-regular' }
-    default:
-      return { text: 'ผู้เรียน', class: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400', icon: 'fluent:hat-graduation-24-regular' }
-  }
-})
+// Cache usePage props
+const page = computed(() => usePage().props);
+const courseTotalScore = computed(() => page.value.course?.data?.total_score || 100);
+const isCourseAdmin = computed(() => page.value.isCourseAdmin);
+const authUserId = computed(() => page.value.auth?.user?.id);
 
-// Format join date
-const formatDate = (date: string) => {
-  if (!date) return ''
-  return new Date(date).toLocaleDateString('th-TH', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  })
-}
+const canManage = computed(() => 
+  props.member?.user?.id === authUserId.value || isCourseAdmin.value
+);
+
+// ✅ ใช้ composable สำหรับ progress calculation
+const memberRef = toRef(props, 'member');
+const { 
+  percentage, 
+  progressStatus, 
+  progressColor, 
+  statusMessage,
+  statusIcon,
+  remainingScore,
+  remainingPercentage,
+  progressBarStyle
+} = useMemberProgress(memberRef, courseTotalScore);
+
+// Member display data
+const memberDisplayName = computed(() => 
+  props.member?.member_name || 
+  props.member?.user?.name || 
+  props.member?.student?.name || 
+  props.member?.name || 
+  'Unknown'
+);
+
+const memberOrderNumber = computed(() => 
+  props.member?.order_number || '#'
+);
+
+const memberGroupName = computed(() => 
+  props.member?.group?.name || '-'
+);
+
+const memberAvatar = computed(() => 
+  props.member?.user?.avatar || '/images/default-avatar.png'
+);
+
+// Handler functions
+const handleUnmember = () => {
+  emit('request-unmember-course', {
+    memberId: props.member.id,
+    memberName: memberDisplayName.value
+  });
+};
+
 </script>
 
 <template>
-  <div class="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-    <button @click="emit('click', member)" class="flex items-center gap-3 flex-1 text-left">
-      <!-- Avatar -->
-      <div class="relative">
-        <img
-          :src="member.user?.avatar || '/images/default-avatar.png'"
-          :alt="member.user?.name"
-          class="w-12 h-12 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
-        />
-        <div 
-          v-if="member.role === 'teacher' || member.role === 'admin' || member.role === 'owner'"
-          class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center"
-        >
-          <Icon icon="fluent:crown-24-filled" class="w-3 h-3 text-white" />
+    <!-- ✅ ใช้ v-if แทน hidden class -->
+    <li v-if="props.member?.role !== 3"
+        class="group relative bg-white dark:bg-gray-800 hover:bg-gradient-to-br hover:from-white hover:to-indigo-50 dark:hover:from-gray-800 dark:hover:to-gray-700 shadow-lg hover:shadow-xl p-4 rounded-xl w-full mb-3 transition-all duration-300 border border-gray-100 dark:border-gray-700 hover:border-indigo-200 dark:hover:border-indigo-900"
+        :aria-label="`Member card for ${memberDisplayName}`"
+        role="article">
+        
+        <!-- Admin Controls -->
+        <div class="absolute top-3 right-3 z-10" v-if="isCourseAdmin">
+            <DotsDropdownMenu @delete-model="handleUnmember">
+                <template #deleteModel>
+                    <span>ลบสมาชิก</span>
+                </template>
+            </DotsDropdownMenu>
         </div>
-      </div>
-      
-      <!-- Info -->
-      <div class="flex-1 min-w-0">
-        <p class="font-medium text-gray-900 dark:text-white truncate">
-          {{ member.user?.name }}
-        </p>
-        <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-          @{{ member.user?.username }}
-        </p>
-        <div class="flex items-center gap-2 mt-1">
-          <span class="text-xs px-2 py-0.5 rounded-full" :class="getRoleBadge.class">
-            {{ getRoleBadge.text }}
-          </span>
-          <span v-if="member.group?.name" class="text-xs text-gray-400">
-            {{ member.group.name }}
-          </span>
+        
+        <!-- Flex Layout สำหรับจัดวาง Member Info และ Progress Bar -->
+        <div class="flex flex-col lg:flex-row gap-4 items-start" :class="{'pr-10': isCourseAdmin}">
+            <!-- Member Info -->
+            <div class="flex items-center w-full lg:w-64 lg:flex-shrink-0">
+                <!-- Avatar with ring -->
+                <div class="relative flex-shrink-0">
+                    <img 
+                        class="w-16 h-16 rounded-full ring-2 transition-all duration-300" 
+                        :class="[progressColor.ring, `group-hover:${progressColor.ring}`]"
+                        :src="memberAvatar" 
+                        :alt="`${memberDisplayName}'s avatar`"
+                        loading="lazy"
+                    />
+                    <!-- Status Badge -->
+                    <div 
+                        class="absolute -bottom-1 -right-1 px-2 py-0.5 rounded-full text-[10px] font-bold text-white shadow-lg"
+                        :class="progressColor.bg">
+                        {{ percentage }}%
+                    </div>
+                </div>
+                
+                <div class="ml-4 min-w-0 flex-1">
+                    <!-- Name -->
+                    <a v-if="isCourseAdmin"
+                       :href="`/courses/${page.course?.data?.id}/members/${props.member.id}/member-settings`"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       :title="memberDisplayName"
+                       class="text-gray-900 dark:text-white font-bold tracking-wide text-lg hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-300 cursor-pointer inline-flex items-center group/link max-w-full">
+                        <span class="truncate">{{ memberDisplayName }}</span>
+                        <Icon icon="heroicons:arrow-top-right-on-square" class="w-4 h-4 ml-1.5 flex-shrink-0 opacity-0 group-hover/link:opacity-100 transition-opacity duration-200" />
+                    </a>
+                    <p v-else 
+                       :title="memberDisplayName"
+                       class="text-gray-900 dark:text-white font-bold tracking-wide text-lg truncate">
+                        {{ memberDisplayName }}
+                    </p>
+                    
+                    <!-- Status Message -->
+                    <div class="flex items-center mt-1 mb-2" :class="progressColor.text">
+                        <Icon :icon="statusIcon" class="w-4 h-4 mr-1.5" />
+                        <span class="text-xs font-semibold">{{ statusMessage }}</span>
+                    </div>
+                    
+                    <!-- Meta Info -->
+                    <div class="flex items-center space-x-3 text-sm">
+                        <!-- Order Number -->
+                        <span class="flex items-center transition-colors"
+                              :class="memberOrderNumber === '#' ? 'text-orange-500 dark:text-orange-400 font-bold' : 'text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400'">
+                            <Icon icon="fluent:number-symbol-square-20-filled" class="w-5 h-5 mr-1" />
+                            <span class="font-medium">{{ memberOrderNumber }}</span>
+                        </span>
+                        
+                        <!-- Group -->
+                        <span class="flex items-center text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                            <Icon icon="heroicons:user-group-solid" class="w-5 h-5 mr-1" />
+                            <span class="font-medium">{{ memberGroupName }}</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div class="flex flex-col items-start lg:items-end w-full flex-1">
+                <div class="flex items-center justify-between mb-2 w-full">
+                    <div class="flex items-center">
+                        <Icon icon="heroicons:academic-cap-solid" class="w-5 h-5 text-indigo-500 dark:text-indigo-400 mr-2" />
+                        <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">ความคืบหน้า</span>
+                    </div>
+                    <!-- <span class="text-xs text-gray-500 font-medium">
+                        เหลืออีก {{ remainingPercentage }}%
+                    </span> -->
+                </div>
+                
+                <div class="relative w-full bg-gray-100 dark:bg-gray-700 rounded-full h-7 overflow-hidden shadow-inner">
+                    <!-- Progress Fill with Gradient -->
+                    <div 
+                        class="h-full text-xs font-bold text-white flex items-center justify-center rounded-full transition-all duration-500 ease-out relative overflow-hidden bg-gradient-to-r"
+                        :class="progressColor.gradient"
+                        :style="`width: ${percentage}%`"
+                        role="progressbar"
+                        :aria-valuenow="percentage"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        :aria-label="`Progress: ${percentage}% - ${progressStatus}`">
+                        
+                        <!-- Shimmer effect -->
+                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"></div>
+                        
+                        <!-- Percentage Text -->
+                        <span class="relative z-10 font-bold">{{ percentage }}%</span>
+                    </div>
+                    
+                    <!-- No Score State -->
+                    <div v-if="percentage === 0" class="absolute inset-0 flex items-center justify-center">
+                        <span class="text-xs font-medium text-gray-500">ยังไม่มีคะแนน</span>
+                    </div>
+                </div>
+                
+                <!-- Score Detail -->
+                <div class="flex items-center justify-between w-full mt-2 text-xs">
+                    <div class="text-gray-500 dark:text-gray-400">
+                        <span class="font-medium" :class="progressColor.text">{{ props.member?.achieved_score || 0 }}</span>
+                        <span class="mx-1">/</span>
+                        <span>{{ courseTotalScore }}</span>
+                        <span class="ml-1">คะแนน</span>
+                    </div>
+                    <!-- <div class="text-gray-400">
+                        <span>เหลือ </span>
+                        <span class="font-medium">{{ remainingScore }}</span>
+                        <span> คะแนน</span>
+                    </div> -->
+                </div>
+            </div>
         </div>
-      </div>
-    </button>
-    
-    <!-- Actions -->
-    <div v-if="isCourseAdmin && member.role !== 'owner'" class="flex items-center gap-1">
-      <button 
-        @click="emit('edit', member)"
-        class="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-        title="แก้ไข"
-      >
-        <Icon icon="fluent:edit-24-regular" class="w-4 h-4" />
-      </button>
-      <button 
-        @click="emit('remove', member.id)"
-        class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-        title="ลบออก"
-      >
-        <Icon icon="fluent:person-delete-24-regular" class="w-4 h-4" />
-      </button>
-    </div>
-  </div>
+    </li>
 </template>
+
+<style scoped>
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+.animate-shimmer {
+    animation: shimmer 2s infinite;
+}
+</style>

@@ -28,6 +28,29 @@ class LessonComment extends Model
         'privacy_settings',
     ];
 
+    /**
+     * The "booted" method of the model.
+     * Handle cascade delete for related records
+     */
+    protected static function booted(): void
+    {
+        static::deleting(function (LessonComment $comment) {
+            // Delete all likes
+            $comment->likeComment()->detach();
+            
+            // Delete all dislikes
+            $comment->dislikeComment()->detach();
+            
+            // Delete all images
+            $comment->lessonCommentImages()->delete();
+            
+            // Delete all replies (child comments)
+            $comment->replies()->each(function ($reply) {
+                $reply->delete(); // This will trigger cascade for each reply
+            });
+        });
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -63,3 +86,4 @@ class LessonComment extends Model
         return $this->belongsToMany(User::class, 'lesson_comment_dislikes', 'comment_id', 'user_id');
     }
 }
+

@@ -45,6 +45,10 @@ class CourseGroupResource extends JsonResource
             'name'                  => $this->name,
             'description'           => $this->description,
             'image_url'             => $this->image_url,
+            'privacy'               => $this->privacy,
+            'auto_accept_member'    => $this->auto_accept_member,
+            'created_at'            => $this->created_at,
+            'updated_at'            => $this->updated_at,
             'members_count'         => $groupMembers->count(),
             'members'               => $groupMembers->map(function($member) {
                 $user = $member->user;
@@ -54,7 +58,7 @@ class CourseGroupResource extends JsonResource
                     'course_id'     => $member->course_id,
                     'group_id'      => $member->group_id,
                     'user_id'       => $member->user_id,
-                    'member_name'   => $member->member_name,
+                    // 'member_name'   => $member->member_name, // Removed
                     'order_number'  => $member->order_number,
                     'user'          => $user ? [
                         'id'        => $user->id,
@@ -63,7 +67,7 @@ class CourseGroupResource extends JsonResource
                         'email'     => $user->email,
                     ] : null,
                     'avatar'        => $avatarUrl,
-                    'name'          => $member->member_name ?? $user?->name,
+                    'name'          => $user?->name ?? 'Unknown User',
                     'group'         => [
                         'id'        => $this->id,
                         'name'      => $this->name,

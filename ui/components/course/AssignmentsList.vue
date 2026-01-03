@@ -1,33 +1,49 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
+import { ref } from 'vue'
+import CourseAssignmentFormModal from './CourseAssignmentFormModal.vue'
 
 interface Props {
   assignments: any[]
   isCourseAdmin?: boolean
   courseId: string | number
+  availableGroups?: any[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
   assignments: () => [],
-  isCourseAdmin: false
+  isCourseAdmin: false,
+  availableGroups: () => []
 })
 
 const emit = defineEmits<{
-  'create': []
   'refresh': []
 }>()
 
 const api = useApi()
 const isDeleting = ref(false)
+const showModal = ref(false)
+const editingAssignment = ref<any>(null)
 
-// Navigate to assignment
+// Open Modal (Create or Edit)
+const openModal = (assignment: any = null) => {
+  editingAssignment.value = assignment
+  showModal.value = true
+}
+
+const handleModalSubmit = () => {
+  emit('refresh')
+  showModal.value = false
+}
+
+// Navigate to assignment details
 const navigateToAssignment = (assignment: any) => {
   navigateTo(`/courses/${props.courseId}/assignments/${assignment.id}`)
 }
 
-// Edit assignment
+// Edit assignment (triggered by Card)
 const editAssignment = (assignment: any) => {
-  navigateTo(`/courses/${props.courseId}/assignments/${assignment.id}/edit`)
+  openModal(assignment)
 }
 
 // Delete assignment
@@ -37,7 +53,7 @@ const deleteAssignment = async (assignmentId: number) => {
   isDeleting.value = true
   try {
     const response = await api.delete(`/api/courses/${props.courseId}/assignments/${assignmentId}`)
-    if (response.success) {
+    if (response) { // API wrapper usually returns handling
       emit('refresh')
     }
   } catch (err: any) {
@@ -51,24 +67,28 @@ const deleteAssignment = async (assignmentId: number) => {
 <template>
   <div class="space-y-4">
     <!-- Header -->
-    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+    <!-- Header -->
+    <div
+      v-if="isCourseAdmin"
+      class="bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-600 dark:from-violet-900 dark:via-indigo-900 dark:to-cyan-900 rounded-2xl p-6 shadow-xl mb-6 text-white"
+    >
       <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
-            <Icon icon="material-symbols:assignment-outline" class="w-5 h-5 text-white" />
+        <div class="flex items-center gap-4">
+          <div class="w-14 h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+            <Icon icon="material-symbols:assignment-outline" class="w-7 h-7 text-white" />
           </div>
           <div>
-            <h2 class="text-lg font-bold text-gray-900 dark:text-white">ภาระงาน</h2>
-            <p class="text-sm text-gray-500 dark:text-gray-400">{{ assignments.length }} รายการ</p>
+            <h2 class="text-2xl font-bold mb-1">ภาระงานทั้งหมด</h2>
+            <p class="text-white/80 text-sm">{{ assignments.length }} งาน</p>
           </div>
         </div>
         <button
           v-if="isCourseAdmin"
-          @click="emit('create')"
-          class="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+          @click="openModal(null)"
+          class="flex items-center gap-2 px-5 py-3 bg-white/10 text-white rounded-xl hover:bg-white/20 border border-white/20 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 font-bold backdrop-blur-sm"
         >
-          <Icon icon="fluent:add-24-regular" class="w-4 h-4" />
-          <span class="hidden sm:inline">เพิ่มภาระงาน</span>
+          <Icon icon="fluent:add-circle-24-filled" class="w-5 h-5" />
+          <span>สร้างงานใหม่</span>
         </button>
       </div>
     </div>
@@ -88,18 +108,33 @@ const deleteAssignment = async (assignmentId: number) => {
     </div>
 
     <!-- Empty State -->
-    <div v-else class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-12 text-center">
-      <Icon icon="material-symbols:assignment-outline" class="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-      <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">ยังไม่มีภาระงาน</h3>
-      <p class="text-gray-500 dark:text-gray-400 mb-4">รายวิชานี้ยังไม่มีภาระงาน</p>
-      <button
+    <!-- Empty State -->
+    <div v-else class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-12 text-center border border-gray-100 dark:border-gray-700">
+      <div class="w-24 h-24 bg-gray-50 dark:bg-gray-700/50 rounded-full flex items-center justify-center mx-auto mb-6">
+        <Icon icon="fluent:clipboard-task-24-regular" class="w-12 h-12 text-gray-400" />
+      </div>
+      <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">ยังไม่มีภาระงาน</h3>
+      <p class="text-gray-500 dark:text-gray-400 mb-8 max-w-xs mx-auto">
+        {{ isCourseAdmin ? 'เริ่มต้นสร้างภาระงานให้นักเรียนของคุณ' : 'อาจารย์ยังไม่ได้มอบหมายงานในขณะนี้' }}
+      </p>
+       <button
         v-if="isCourseAdmin"
-        @click="emit('create')"
-        class="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+        @click="openModal(null)"
+        class="inline-flex items-center gap-2 px-6 py-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition-all shadow-lg hover:shadow-orange-500/30 font-semibold"
       >
-        <Icon icon="fluent:add-24-regular" class="w-4 h-4" />
+        <Icon icon="fluent:add-24-filled" class="w-5 h-5" />
         สร้างภาระงานแรก
       </button>
     </div>
+
+    <!-- Edit/Create Modal -->
+    <CourseAssignmentFormModal
+      :show="showModal"
+      :assignment="editingAssignment"
+      :course-id="courseId"
+      :available-groups="availableGroups"
+      @close="showModal = false"
+      @submit="handleModalSubmit"
+    />
   </div>
 </template>

@@ -8,6 +8,10 @@ import LoadingPage from '@/PlearndComponents/accessories/LoadingPage.vue';
 
 const props = defineProps({
     course_id: Number,
+    group_id: {
+        type: Number,
+        default: null
+    }
 });
 
 const emit = defineEmits(['add-new-post']);
@@ -37,6 +41,7 @@ const canBePosted = computed(() => postForm.content.length>0 || postForm.images.
 const defaultPostForm = reactive({
     content: '',
     'course_id': props.course_id, // 'course_id': 'required|integer',
+    'group_id': props.group_id,
     point:1,
     privacy_settings: 3,
     images: [],
@@ -45,6 +50,7 @@ const defaultPostForm = reactive({
 const postForm = reactive({
     content: '',
     'course_id': props.course_id,
+    'group_id': props.group_id,
     point:1,
     privacy_settings: 3,
     images: [],
@@ -94,6 +100,9 @@ async function onSubmitCreatePost(){
         const formData = new FormData();
         formData.append('content', postForm.content);
         formData.append('course_id', postForm.course_id);
+        if (props.group_id) {
+            formData.append('group_id', props.group_id);
+        }
         formData.append('point', postForm.point);
         formData.append('privacy_settings', selectedPrivacy.value);
         postForm.images.forEach((image, index) => {
