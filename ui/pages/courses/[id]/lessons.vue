@@ -4,7 +4,7 @@ import type { Ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Icon } from '@iconify/vue'
 import { useApi } from '~/composables/useApi'
-import ContentLoader from '~/PlearndComponents/accessories/ContentLoader.vue'
+import ContentLoader from '~/components/accessories/ContentLoader.vue'
 import LessonPost from '~/components/course/lesson/LessonPost.vue'
 
 const route = useRoute()

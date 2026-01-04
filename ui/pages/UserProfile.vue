@@ -1,11 +1,11 @@
  <script setup>
 // import { Head } from "@inertiajs/vue3";
 import MainLayout from "~/layouts/main.vue";
-import CreatePost from '@/PlearndComponents/widgets/CreatePost.vue';
-import NewsFeedPostsViewer from '@/PlearndComponents/play/posts/NewsFeedPostsViewer.vue';
+import QuickPostBox from '@/components/widgets/QuickPostBox.vue';
+import NewsFeedPostsViewer from '@/components/play/posts/NewsFeedPostsViewer.vue';
 
 // import ProfileCover from "@/components/partials/ProfileCover.vue";
-// import QuickPostBox from '@/PlearndComponents/widgets/QuickPostBox.vue';
+
 // import ActivitiesFeed from '@/components/widgets/ActivitiesFeed.vue';
 // import CreateNewSchoolWidget from '@/components/widgets/CreateNewSchoolWidget.vue';
 // import { ref } from "vue";
@@ -43,7 +43,7 @@ const props = defineProps({
                         <p class="text-white font-bold text-4xl">กระดานข่าว {{ props.user.name }}</p>
                     </div>
 
-                    <CreatePost />
+                    <QuickPostBox />
 
                     <div v-for="(activity,index) in props.activities.data" :key="index" >
                         <div v-if="activity.action_to === 'Post'">

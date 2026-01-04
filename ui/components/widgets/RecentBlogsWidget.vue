@@ -18,7 +18,7 @@ const blogs = ref([
   },
   {
     id: 3,
-    title: "The socimo over watch scandals.",
+    title: "The new over watch scandals.",
     image: '/images/blog-3.jpg',
     time: '1 day before',
     link: '/blog/3'

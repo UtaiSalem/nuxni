@@ -1,9 +1,11 @@
 <?php
 
-namespace App\Http\Resources\Learn\Course;
+namespace App\Http\Resources\Learn\Course\progress;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Http\Resources\Learn\Course\info\CourseResource;
+use App\Http\Resources\UserResource;
 
 class CourseMemberGradeProgressResource extends JsonResource
 {

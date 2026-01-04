@@ -1,6 +1,6 @@
 <script setup>
 import GameLayout from '@/Layouts/GameLayout.vue';
-import SnakeGameComponent from '@/PlearndComponents/play/games/snake/SnakeGameComponent.vue';
+import SnakeGameComponent from '@/components/play/games/snake/SnakeGameComponent.vue';
 
 </script>
 <template>

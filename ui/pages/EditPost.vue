@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue';
 import MainLayout from '~/layouts/main.vue';
 import PostSkeleton from '@/components/PostSkeleton.vue';
-import EditPostForm from '@/PlearndComponents/widgets/EditPostForm.vue';
+import EditPostForm from '@/components/widgets/EditPostForm.vue';
 
 const props = defineProps({
     'post_id': Number,

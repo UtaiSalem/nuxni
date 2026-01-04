@@ -3,7 +3,7 @@ import { ref } from 'vue';
 import { Icon } from '@iconify/vue';
 import axios from 'axios';
 import Swal from 'sweetalert2';
-import DotsDropdownMenu from '@/PlearndComponents/accessories/DotsDropdownMenu.vue';
+import DotsDropdownMenu from '@/components/accessories/DotsDropdownMenu.vue';
 
 const props = defineProps({
     user: Object

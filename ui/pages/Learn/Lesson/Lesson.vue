@@ -3,11 +3,11 @@ import { ref } from 'vue';
 import { Head, usePage, Link } from "@inertiajs/vue3";
 import { Icon } from '@iconify/vue';
 import MainLayout from "~/layouts/main.vue";
-import LessonCoverProfile from '@/PlearndComponents/learn/courses/lessons/LessonCoverProfile.vue';
-import AssignmentListViewer from '@/PlearndComponents/learn/courses/assignments/AssignmentListViewer.vue';
-import CreateNewAssignmentCard from '@/PlearndComponents/learn/courses/assignments/CreateNewAssignmentCard.vue';
-import QuestionsListViewer from '@/PlearndComponents/learn/courses/questions/QuestionsListViewer.vue';
-import LessonImagesViewer from '@/PlearndComponents/learn/courses/lessons/LessonImagesViewer.vue';
+import LessonCoverProfile from '@/components/course/lesson/LessonCoverProfile.vue';
+import AssignmentListViewer from '@/components/course/lesson/LessonAssignmentSection.vue';
+import CreateNewAssignmentCard from '@/components/course/lesson/CreateNewAssignmentCard.vue';
+import QuestionsListViewer from '@/components/course/lesson/LessonQuizSection.vue';
+import LessonImagesViewer from '@/components/course/lesson/LessonImagesViewer.vue';
 
 const props = defineProps({
     isCourseAdmin: Boolean,
@@ -127,11 +127,8 @@ function onAddNewAssignmentHandler(newAsm){
 
                     <div v-if="activeTab===3" class="mt-4 space-y-4">
                         <AssignmentListViewer
-                            :assignmentableType="'lessons'"
-                            :assignmentableId="props.lesson.data.id"
-                            :assignmentNameTh="'บทเรียน'"
-                            :assignmentApiRoute="`/lessons/${props.lesson.data.id}`"
-                            v-model:assignments="props.assignments.data"
+                            :assignments="props.assignments.data"
+                            :lessonId="props.lesson.data.id"
                         />
 
                         <CreateNewAssignmentCard v-if="$page.props.isCourseAdmin"
@@ -144,12 +141,8 @@ function onAddNewAssignmentHandler(newAsm){
                     </div>
                     <div v-if="activeTab===4" class="mt-4">
                         <QuestionsListViewer
-                            :questionableType="'lessons'"
-                            :questionableId="props.lesson.data.id"
-                            :questionNameTh="'หัวข้อ'"
-                            :questionApiRoute="`/lessons/${props.lesson.data.id}`"
-                            v-model:questions="props.questions.data"
-                            :quizId="props.lesson.data.id"
+                            :questions="props.questions.data"
+                            :lessonId="props.lesson.data.id"
                         />
                     </div>
                 </div>

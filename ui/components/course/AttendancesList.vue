@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
 import { useApi } from '~/composables/useApi'
-import ContentLoader from '~/PlearndComponents/accessories/ContentLoader.vue'
+import ContentLoader from '~/components/accessories/ContentLoader.vue'
 import AttendancesTable from '~/components/course/AttendancesTable.vue'
 import StudentAttendanceTable from '~/components/course/StudentAttendanceTable.vue'
 import Swal from 'sweetalert2'

@@ -1,7 +1,7 @@
 <script setup>
 
 import CourseLayout from '@/Layouts/CourseLayout.vue';
-import CourseInfomation from '@/PlearndComponents/learn/courses/info/CourseInfomation.vue';
+import CourseInfomation from '@/components/course/info/CourseInfomation.vue';
 
 const props = defineProps({
     course: Object,

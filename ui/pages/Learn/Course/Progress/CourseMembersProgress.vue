@@ -3,8 +3,8 @@ import { ref, computed } from 'vue';
 import { useApi } from '~/composables/useApi';
 
 import CourseLayout from '@/Layouts/CourseLayout.vue';
-import StaggeredFade from '@/PlearndComponents/accessories/StaggeredFade.vue';
-import MembersProgress from '@/PlearndComponents/learn/courses/progress/MembersProgress.vue';
+import StaggeredFade from '@/components/accessories/StaggeredFade.vue';
+import MembersProgress from '@/components/course/progress/MembersProgress.vue';
 import MyProgressDetails from '@/components/course/MyProgressDetails.vue';
 import Modal from '@/components/Modal.vue';
 import { Icon } from '@iconify/vue';

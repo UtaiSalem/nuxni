@@ -33,21 +33,21 @@
         <div class="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 animate-fade-in-up animation-delay-600">
           <div class="flex flex-col items-center">
             <div class="w-16 h-16 bg-white/70 backdrop-blur-sm rounded-xl flex items-center justify-center mb-4 border border-gray-200/50">
-              <img class="badge-item-preview-image" src="storage/images/badge/warrior-b.png" alt="badge-warrior-b">
+              <img class="badge-item-preview-image" src="/storage/images/badge/warrior-b.png" alt="badge-warrior-b">
             </div>
             <span class="text-sm font-medium text-gray-600">Play</span>
           </div>
           
           <div class="flex flex-col items-center">
             <div class="w-16 h-16 bg-white/70 backdrop-blur-sm rounded-xl flex items-center justify-center mb-4 border border-gray-200/50">
-            <img class="badge-item-preview-image" src="storage/images/badge/mightiers-b.png" alt="badge-mightiers-b">
+            <img class="badge-item-preview-image" src="/storage/images/badge/mightiers-b.png" alt="badge-mightiers-b">
             </div>
             <span class="text-sm font-medium text-gray-600">Learnd</span>
           </div>
           
           <div class="flex flex-col items-center">
             <div class="w-16 h-16 bg-white/70 backdrop-blur-sm rounded-xl flex items-center justify-center mb-4 border border-gray-200/50">
-            <img class="badge-item-preview-image" src="storage/images/badge/goldc.png" alt="badge-goldc-b">
+            <img class="badge-item-preview-image" src="/storage/images/badge/goldc.png" alt="badge-goldc-b">
             </div>
             <span class="text-sm font-medium text-gray-600">Earn</span>
           </div>

@@ -1,9 +1,8 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import CourseLayout from '@/Layouts/CourseLayout.vue';
-import StaggeredFade from '@/PlearndComponents/accessories/StaggeredFade.vue';
-import GroupedMemberList from '@/PlearndComponents/learn/courses/members/GroupedMemberList.vue'
-// import NonGroupedMemberList from '@/PlearndComponents/learn/courses/members/NonGroupedMemberList.vue'
+import StaggeredFade from '@/components/accessories/StaggeredFade.vue';
+import GroupedMemberList from '@/components/course/members/GroupedMemberList.vue';
 const props = defineProps({
     course: Object,
     members: Object, 

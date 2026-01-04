@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import AssignmentsList from '~/components/course/AssignmentsList.vue'
 import { Icon } from '@iconify/vue'
-import ContentLoader from '~/PlearndComponents/accessories/ContentLoader.vue'
+import ContentLoader from '~/components/accessories/ContentLoader.vue'
 
 // Inject course data from parent layout
 const course = inject<Ref<any>>('course')

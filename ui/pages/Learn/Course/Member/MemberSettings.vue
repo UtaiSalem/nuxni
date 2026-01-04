@@ -1,7 +1,7 @@
 <script setup>
 import { usePage } from "@inertiajs/vue3";
 import CourseLayout from '@/Layouts/CourseLayout.vue';
-import CourseMemberSetting from '@/PlearndComponents/learn/courses/members/CourseMemberSetting.vue';
+import CourseMemberSetting from '@/components/course/members/CourseMemberSetting.vue';
 
 const props = defineProps({
     course: Object,

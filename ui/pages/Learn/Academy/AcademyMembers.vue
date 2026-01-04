@@ -4,10 +4,9 @@ import { useForm, Link } from '@inertiajs/vue3';
 import { Icon } from '@iconify/vue';
 import Swal from 'sweetalert2';
 import MainLayout from '~/layouts/main.vue';
-import AcademyCoverProfile from '@/PlearndComponents/learn/academies/AcademyCoverProfile.vue';
-import CourseCard from '@/PlearndComponents/learn/courses/CourseCard.vue';
-import AcademyNavbarTab from '@/PlearndComponents/learn/academies/AcademyNavbarTab.vue';
-// import AcademyNavbarTab from '@/PlearndComponents/learn/academies/AcademyNavbarTab.vue';
+import AcademyCoverProfile from '@/components/learn/academy/AcademyCoverProfile.vue';
+import CourseCard from '@/components/course/CourseCard.vue';
+import AcademyNavbarTab from '@/components/learn/academy/AcademyNavbarTab.vue';
 
 const props = defineProps({
     academy: Object,

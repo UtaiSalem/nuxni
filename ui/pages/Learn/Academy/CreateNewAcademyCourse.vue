@@ -5,8 +5,8 @@ import { Icon } from '@iconify/vue';
 import Swal from 'sweetalert2';
 
 import MainLayout from '~/layouts/main.vue';
-import AcademyCoverProfile from '@/PlearndComponents/learn/academies/AcademyCoverProfile.vue';
-import CreateNewAcademyCourse from '@/PlearndComponents/learn/academies/CreateNewAcademyCourse.vue';
+import AcademyCoverProfile from '@/components/learn/academy/AcademyCoverProfile.vue';
+import CreateNewAcademyCourse from '@/components/learn/academy/CreateNewAcademyCourse.vue';
 
 const props = defineProps({
     academy: Object,

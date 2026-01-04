@@ -1,6 +1,6 @@
 <script setup>
 import MainLayout from '~/layouts/main.vue';
-import ApproveAdvertCard from '@/PlearndComponents/earn/advertise/ApproveAdvertCard.vue';
+import ApproveAdvertCard from '@/components/earn/advertise/ApproveAdvertCard.vue';
 
 const props = defineProps({
     advertises: {

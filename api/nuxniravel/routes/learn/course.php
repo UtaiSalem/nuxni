@@ -150,7 +150,17 @@ Route::middleware(['auth:api', 'verified'])->prefix('/lessons')->group(function 
     Route::resource('/', LessonController::class);
     Route::resource('/{lesson}/images', LessonImageController::class);
     Route::resource('/{lesson}/assignments', LessonAssignmentController::class);
-    Route::resource('/{lesson}/questions', LessonQuestionController::class);
+    Route::resource('/{lesson}/questions', LessonQuestionController::class, [
+        'names' => [
+            'index' => 'lesson.questions.index',
+            'store' => 'lesson.questions.store',
+            'create' => 'lesson.questions.create',
+            'show' => 'lesson.questions.show',
+            'update' => 'lesson.questions.update',
+            'destroy' => 'lesson.questions.destroy',
+            'edit' => 'lesson.questions.edit',
+        ]
+    ]);
     Route::post('/{lesson}/questions/{question}/answer', [\App\Http\Controllers\Api\Learn\Course\lessons\questions\LessonAnswerQuestionController::class, 'store'])->name('lesson.questions.answer');
     
     Route::resource('/{lesson}/topics', TopicController::class);

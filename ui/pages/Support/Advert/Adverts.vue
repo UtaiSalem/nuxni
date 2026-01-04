@@ -6,8 +6,8 @@ import { Icon } from '@iconify/vue';
 
 import InfiniteLoading from "v3-infinite-loading";
 import MainLayout from '~/layouts/main.vue';
-import AdvertiseItemCard from '@/PlearndComponents/widgets/advertises/AdvertiseItemCard.vue';
-import LoadingPage from '@/PlearndComponents/accessories/LoadingPage.vue';
+import AdvertiseItemCard from '@/components/widgets/advertises/AdvertiseItemCard.vue';
+import LoadingPage from '@/components/accessories/LoadingPage.vue';
 
 
 const props = defineProps({

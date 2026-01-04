@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import AssignmentGradingView from '~/components/course/AssignmentGradingView.vue'
 import AssignmentSubmissionForm from '~/components/course/AssignmentSubmissionForm.vue'
-import ContentLoader from '~/PlearndComponents/accessories/ContentLoader.vue'
+import ContentLoader from '~/components/accessories/ContentLoader.vue'
 
 const route = useRoute()
 const api = useApi()

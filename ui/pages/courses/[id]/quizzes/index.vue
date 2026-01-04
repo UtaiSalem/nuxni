@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
 import QuizPost from '~/components/course/quiz/QuizPost.vue'
-import ContentLoader from '@/PlearndComponents/accessories/ContentLoader.vue'
+import ContentLoader from '@/components/accessories/ContentLoader.vue'
 
 // Inject course data from parent
 const course = inject<Ref<any>>('course')

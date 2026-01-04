@@ -1,7 +1,7 @@
 <script setup>
 import { Head } from '@inertiajs/vue3';
 import MainLayout from '~/layouts/main.vue';
-import Navbar from '@/PlearndComponents/partials/Navbar.vue';
+import Navbar from '@/components/partials/Navbar.vue';
 
 </script>
 

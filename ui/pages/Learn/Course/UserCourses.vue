@@ -3,10 +3,10 @@ import { ref } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
 import { Icon } from '@iconify/vue';
 
-import CoursesLayout from '@/Layouts/CoursesLayout.vue';
-import CourseCard from '@/PlearndComponents/learn/courses/CourseCard.vue';
+import CoursesLayout from '@/layouts/CoursesLayout.vue';
+import CourseCard from '@/components/course/CourseCard.vue';
 import InfiniteLoading from "v3-infinite-loading";
-import CoursesLoading from '@/PlearndComponents/accessories/CoursesLoadingSkeleton.vue'
+import CoursesLoading from '@/components/accessories/CoursesLoadingSkeleton.vue'
 
 const props = defineProps({
     courses: Object,

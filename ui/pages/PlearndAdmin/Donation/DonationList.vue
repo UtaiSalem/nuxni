@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue';
 import MainLayout from '~/layouts/main.vue';
-import DonateCard from '@/PlearndComponents/earn/donates/DonateCard.vue';
+import DonateCard from '@/components/earn/donates/DonateCard.vue';
 import InfiniteLoading from "v3-infinite-loading";
 
 const props = defineProps({

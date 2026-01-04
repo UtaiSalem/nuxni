@@ -3,7 +3,7 @@
     <!-- Background -->
     <div class="absolute inset-0">
       <img
-        src="/your-background-image.jpg"
+        src="/storage/images/std_card_bg2.png"
         alt="bg"
         class="w-full h-full object-cover opacity-20"
       />
@@ -17,7 +17,7 @@
       <!-- Logo and School Name -->
       <div class="flex items-center space-x-4">
         <img
-          src="/logo.png"
+          src="/storage/jsm_logo.png"
           alt="logo"
           class="w-16 h-16 object-contain"
         />
@@ -44,10 +44,10 @@
 
       <!-- QR Code and Signature -->
       <div class="flex justify-between items-end mt-4">
-        <img src="/qr-code.png" alt="QR" class="w-20 h-20" />
+        <img src="/storage/jsm_logo.png" alt="QR" class="w-20 h-20" />
         <div class="text-right text-sm text-gray-700">
           <div class="h-10 mb-1">
-            <img src="/signature.png" alt="signature" class="h-full" />
+            <img src="/storage/jsm_director_signature.png" alt="signature" class="h-full" />
           </div>
           <div>(นางซารีนา ลาเก๊าะ)</div>
           <div>ผู้อำนวยการโรงเรียน</div>

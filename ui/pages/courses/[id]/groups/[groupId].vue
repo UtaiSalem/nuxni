@@ -2,7 +2,7 @@
 import { Icon } from '@iconify/vue'
 import CourseFeedsList from '~/components/course/CourseFeedsList.vue'
 import CourseGroupResources from '~/components/course/groups/CourseGroupResources.vue'
-import CourseGroupAttendance from '@/PlearndComponents/learn/courses/attendances/CourseGroupAttendance.vue'
+import CourseGroupAttendance from '@/components/course/attendances/CourseGroupAttendance.vue'
 
 // Inject course data
 const course = inject<Ref<any>>('course')

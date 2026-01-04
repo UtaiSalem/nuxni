@@ -1,8 +1,8 @@
 <script setup>
 import { ref } from 'vue';
 import { usePage, router } from '@inertiajs/vue3'
-import CoursesLayout from '@/Layouts/CoursesLayout.vue';
-import CourseCard from '@/PlearndComponents/learn/courses/CourseCard.vue';
+import CoursesLayout from '@/layouts/CoursesLayout.vue';
+import CourseCard from '@/components/course/CourseCard.vue';
 import InfiniteLoading from "v3-infinite-loading";
 import { Icon } from '@iconify/vue';
 

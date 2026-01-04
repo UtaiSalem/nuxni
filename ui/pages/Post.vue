@@ -1,7 +1,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
 import MainLayout from '~/layouts/main.vue';
-import SinglePostViewer from '@/PlearndComponents/play/posts/SinglePostViewer.vue';
+import SinglePostViewer from '@/components/play/posts/SinglePostViewer.vue';
 import PostSkeleton from '@/components/PostSkeleton.vue';
 
 const props = defineProps({

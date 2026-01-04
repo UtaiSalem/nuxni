@@ -6,9 +6,9 @@ import Swal from 'sweetalert2';
 
 import MainLayout from '~/layouts/main.vue';
 
-import DonationCard from '@/PlearndComponents/earn/donates/DonationCard.vue';
+import DonationCard from '@/components/earn/donates/DonationCard.vue';
 
-import LoadingPage from '@/PlearndComponents/accessories/LoadingPage.vue';
+import LoadingPage from '@/components/accessories/LoadingPage.vue';
 
 const props = defineProps({
     donates: Object,

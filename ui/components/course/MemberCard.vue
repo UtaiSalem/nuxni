@@ -5,7 +5,7 @@ import { Icon } from '@iconify/vue';
 
 // ✅ Import composable
 import { useMemberProgress } from '@/composables/useMemberProgress.ts';
-import DotsDropdownMenu from '@/PlearndComponents/accessories/DotsDropdownMenu.vue';
+import DotsDropdownMenu from '@/components/accessories/DotsDropdownMenu.vue';
 
 const props = defineProps({
     member: {

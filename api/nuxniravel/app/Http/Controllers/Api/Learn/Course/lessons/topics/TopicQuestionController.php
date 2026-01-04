@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Controllers\Api\Learn\Course\lessons\questions;
+namespace App\Http\Controllers\Api\Learn\Course\lessons\topics;
 
 use App\Models\Topic;
 use App\Models\Question;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use App\Http\Resources\QuestionResource;
+use App\Http\Resources\Learn\Course\questions\QuestionResource;
 
 class TopicQuestionController extends \App\Http\Controllers\Controller
 {

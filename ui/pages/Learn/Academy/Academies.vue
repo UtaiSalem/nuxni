@@ -4,8 +4,8 @@ import { Link, usePage } from '@inertiajs/vue3';
 import MainLayout from '~/layouts/main.vue';
 import { Icon } from '@iconify/vue';
 import Swal from 'sweetalert2';
-import AcademiesLoadingSkeleton from '@/PlearndComponents/accessories/AcademiesLoadingSkeleton.vue';
-import AcademyCard from '@/PlearndComponents/learn/academies/AcademyCard.vue';
+import AcademiesLoadingSkeleton from '@/components/accessories/AcademiesLoadingSkeleton.vue';
+import AcademyCard from '@/components/learn/academy/AcademyCard.vue';
 
 const isLoading = ref(false);
 const authUser = usePage().props.auth.user;

@@ -4,7 +4,7 @@ import MainLayout from '~/layouts/main.vue';
 import '@vuepic/vue-datepicker/dist/main.css';
 import { Link } from '@inertiajs/vue3'
 import { Icon } from '@iconify/vue';
-import CreateAdvert from '@/PlearndComponents/earn/advertise/CreateAdvert.vue';
+import CreateAdvert from '@/components/earn/advertise/CreateAdvert.vue';
 
 const props = defineProps({
     Supporter: Object,

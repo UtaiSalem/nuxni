@@ -2,8 +2,8 @@
 import { Icon } from '@iconify/vue'
 import { onBeforeRouteLeave } from 'vue-router'
 import Swal from 'sweetalert2'
-import QuestionsListViewer from '@/PlearndComponents/learn/courses/questions/QuestionsListViewer.vue'
-import ContentLoader from '@/PlearndComponents/accessories/ContentLoader.vue'
+import QuestionsListViewer from '@/components/course/questions/QuestionsListViewer.vue'
+import ContentLoader from '@/components/accessories/ContentLoader.vue'
 
 const route = useRoute()
 const courseId = route.params.id

@@ -1,10 +1,10 @@
 <script setup>
 import { ref } from 'vue';
-import AcademyLayout from '@/Layouts/AcademyLayout.vue';
-import PostLoadingSkeleton from '@/PlearndComponents/accessories/PostLoadingSkeleton.vue';
+import AcademyLayout from '@/layouts/AcademyLayout.vue';
+import PostLoadingSkeleton from '@/components/accessories/PostLoadingSkeleton.vue';
 
-import CreateAcademyPost from '@/PlearndComponents/learn/academies/posts/CreateAcademyPost.vue';
-import AcademyPostViewer from '@/PlearndComponents/learn/academies/posts/AcademyPostViewer.vue';
+import CreateAcademyPost from '@/components/learn/academy/posts/CreateAcademyPost.vue';
+import AcademyPostViewer from '@/components/learn/academy/posts/AcademyPostViewer.vue';
 
 const props = defineProps({
     academy: Object,

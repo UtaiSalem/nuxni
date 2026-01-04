@@ -2,11 +2,11 @@
 import { ref} from 'vue';
 import { router } from '@inertiajs/vue3';
 
-import CoursesLayout from '@/Layouts/CoursesLayout.vue';
-import CourseCard from '@/PlearndComponents/learn/courses/CourseCard.vue';
+import CoursesLayout from '@/layouts/CoursesLayout.vue';
+import CourseCard from '@/components/course/CourseCard.vue';
 import InfiniteLoading from "v3-infinite-loading";
-import CoursesLoadingSkeleton from '@/PlearndComponents/accessories/CoursesLoadingSkeleton.vue'
-import LoadingPage from '@/PlearndComponents/accessories/LoadingPage.vue';
+import CoursesLoadingSkeleton from '@/components/accessories/CoursesLoadingSkeleton.vue'
+import LoadingPage from '@/components/accessories/LoadingPage.vue';
 
 
 const props = defineProps({
