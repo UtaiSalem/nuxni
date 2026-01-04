@@ -78,14 +78,80 @@ class CourseMemberController extends Controller
         ]);
     }
 
-    public function show(Course $course, CourseGroup $group, CourseMember $member)
+    public function show(Course $course, CourseMember $member)
     {
+        $userId = $member->user_id;
+        
+        // Get all lessons with completion status
+        $lessons = $course->courseLessons()->get()->map(function ($lesson) use ($userId) {
+            $progress = \App\Models\LessonProgress::where('lesson_id', $lesson->id)
+                ->where('user_id', $userId)
+                ->first();
+            
+            return [
+                'id' => $lesson->id,
+                'title' => $lesson->title,
+                'completed' => $progress && $progress->status === 'completed',
+            ];
+        });
+        
+        // Get all assignments (course + lesson) with submission status and scores
+        $courseAssignments = $course->courseAssignments;
+        $lessonAssignments = $course->courseLessons()->with('assignments')->get()->flatMap->assignments;
+        $allAssignments = $courseAssignments->merge($lessonAssignments);
+        
+        $assignments = $allAssignments->map(function ($assignment) use ($userId) {
+            $answer = \App\Models\AssignmentAnswer::where('assignment_id', $assignment->id)
+                ->where('user_id', $userId)
+                ->first();
+            
+            return [
+                'id' => $assignment->id,
+                'title' => $assignment->title ?? $assignment->name ?? 'งานที่ ' . $assignment->id,
+                'max_score' => $assignment->points ?? $assignment->max_score ?? 100,
+                'score' => $answer ? $answer->points : null,
+                'submitted' => $answer !== null,
+                'status' => $answer ? $answer->status : 'not_submitted', // submitted, in_review, graded
+                'submitted_at' => $answer ? $answer->created_at : null,
+                'graded' => $answer && $answer->status === 'graded',
+            ];
+        });
+        
+        // Get all quizzes with completion status and scores
+        $courseQuizzes = $course->courseQuizzes;
+        
+        $quizzes = $courseQuizzes->map(function ($quiz) use ($userId, $course) {
+            $result = \App\Models\CourseQuizResult::where('quiz_id', $quiz->id)
+                ->where('user_id', $userId)
+                ->where('course_id', $course->id)
+                ->orderBy('score', 'desc') // Get best score
+                ->first();
+            
+            // Count attempts
+            $attemptCount = \App\Models\CourseQuizResult::where('quiz_id', $quiz->id)
+                ->where('user_id', $userId)
+                ->where('course_id', $course->id)
+                ->count();
+            
+            return [
+                'id' => $quiz->id,
+                'title' => $quiz->title ?? $quiz->name ?? 'แบบทดสอบที่ ' . $quiz->id,
+                'max_score' => $quiz->total_points ?? $quiz->questions_count ?? 10,
+                'score' => $result ? $result->score : null,
+                'completed' => $result !== null,
+                'attempt_count' => $attemptCount,
+                'completed_at' => $result ? $result->created_at : null,
+                'passed' => $result && $quiz->passing_score ? $result->score >= $quiz->passing_score : null,
+            ];
+        });
+
         return response()->json([
             'isCourseAdmin' => $course->user_id === auth()->id(),
-            'course'        => new CourseResource($course),
-            'lessons'       => LessonResource::collection($course->courseLessons),
-            'groups'        => CourseGroupResource::collection($course->courseGroups),
-            'member'        => new CourseMemberResource($member)
+            'course' => new CourseResource($course),
+            'member' => new CourseMemberResource($member),
+            'lessons' => $lessons,
+            'assignments' => $assignments,
+            'quizzes' => $quizzes,
         ]);
     }
 
@@ -261,37 +327,23 @@ class CourseMemberController extends Controller
     //function update member bonus points
     public function updateBonusPoints(Course $course, CourseMember $member, Request $request)
     {
-        $member->increment('bonus_points', $request->bonus_points);
+        $member->update(['bonus_points' => $request->bonus_points]);
+
+        $percentage = (($member->achieved_score + $request->bonus_points) / $course->total_score) * 100;
+        $grade = CourseMember::calculateGradeFromPercentage($percentage);
 
         $member->update([
-            'grade_progress' => $this->calculateGrade((($member->achieved_score+$request->bonus_points) / $course->total_score) * 100),
+            'grade_progress' => $grade,
         ]);
 
         $member->refresh();
         
         return response()->json([
-            'success' => true,          
+            'success' => true,
+            'bonus_points' => $member->bonus_points,
+            'grade_progress' => $member->grade_progress,
+            'grade_name' => $member->getGradeName(),
         ], 200);
-    }
-
-    public function calculateGrade($score) {
-        if ($score >= 80) {
-            return '4';
-        } else if ($score >= 75) {
-            return '3.5';
-        } else if ($score >= 70) {
-            return '3';
-        } else if ($score >= 65) {
-            return '2.5';
-        } else if ($score >= 60) {
-            return '2';
-        } else if ($score >= 55) {
-            return '1.5';
-        } else if ($score >= 50) {
-            return '1';
-        } else {
-            return '0';
-        }
     }
 
     public function updateGradeProgress(Course $course, CourseMember $member, Request $request)

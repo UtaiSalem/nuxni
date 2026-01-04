@@ -225,4 +225,20 @@ class CourseMemberGradeProgressController extends Controller
             'member_quizes_results'     => CourseQuizResultResource::collection($user_quizes_results)
         ]);
     }
+    public function updateEditedGrade(Course $course, CourseMember $member, Request $request)
+    {
+        $request->validate([
+            'edited_grade' => 'nullable|numeric|between:0,4',
+        ]);
+
+        $member->update([
+            'edited_grade' => $request->edited_grade
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'edited_grade' => $member->edited_grade,
+            'grade_name' => $member->getGradeName(), // This should ideally reflect the edited grade if we update logic
+        ]);
+    }
 }

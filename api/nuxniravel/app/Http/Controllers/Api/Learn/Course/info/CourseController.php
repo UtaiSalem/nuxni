@@ -331,17 +331,229 @@ class CourseController extends Controller
     }
 
     //function to process all member progrss and grade
-    public function progress(Course $course)
+    public function progress(Course $course, Request $request)
     {
-        $courseMembers = $course->courseMembers;
+        $query = $course->courseMembers()->with('user');
+
+        // Filter by Group
+        if ($request->has('group_id') && $request->group_id && $request->group_id !== 'all') {
+            if ($request->group_id === 'ungrouped') {
+                $query->whereNull('group_id');
+            } else {
+                $query->where('group_id', $request->group_id);
+            }
+        }
+
+        // Search
+        if ($request->has('search') && $request->search) {
+            $searchTerm = '%' . $request->search . '%';
+            $query->where(function($q) use ($searchTerm) {
+                $q->whereHas('user', function ($uq) use ($searchTerm) {
+                    $uq->where('name', 'like', $searchTerm)
+                       ->orWhere('username', 'like', $searchTerm)
+                       ->orWhere('email', 'like', $searchTerm);
+                })->orWhere('member_code', 'like', $searchTerm);
+            });
+        }
+
+        // Sorting
+        $sortField = $request->get('sort', 'created_at');
+        $sortOrder = $request->get('order', 'desc');
+        
+        if ($sortField === 'name') {
+            $query->join('users', 'course_members.user_id', '=', 'users.id')
+                  ->orderBy('users.name', $sortOrder)
+                  ->select('course_members.*'); // Avoid column collision
+        } elseif ($sortField === 'progress') {
+            $query->orderBy('grade_progress', $sortOrder); // Assuming grade_progress reflects progress
+        } else {
+            $query->orderBy('course_members.' . $sortField, $sortOrder);
+        }
+
+        $courseMembers = $query->paginate($request->get('per_page', 20));
+        
+        // 1. Fetch related data for score calculation
+        $courseAssignments = $course->courseAssignments;
+        $courseQuizzes = $course->courseQuizzes;
+        $lessons = $course->courseLessons()->with(['assignments', 'questions'])->get();
+        
+        $lessonAssignments = $lessons->flatMap->assignments;
+        $lessonQuestions = $lessons->flatMap->questions;
+
+        $courseAssignmentIds = $courseAssignments->pluck('id');
+        $lessonAssignmentIds = $lessonAssignments->pluck('id');
+        $lessonQuestionIds = $lessonQuestions->pluck('id');
+        
+        // 2. Fetch all answers and results efficiently (For the current page only)
+        $memberUserIds = $courseMembers->pluck('user_id');
+
+        $allAssignmentAnswers = \App\Models\AssignmentAnswer::whereIn('assignment_id', $courseAssignmentIds->merge($lessonAssignmentIds))
+            ->whereIn('user_id', $memberUserIds)
+            ->get()
+            ->groupBy('user_id');
+
+        $allQuizResults = \App\Models\CourseQuizResult::where('course_id', $course->id)
+            ->whereIn('user_id', $memberUserIds)
+            ->get()
+            ->groupBy('user_id');
+
+        $allQuestionAnswers = \App\Models\UserAnswerQuestion::whereIn('question_id', $lessonQuestionIds)
+            ->whereIn('user_id', $memberUserIds)
+            ->with('question')
+            ->get()
+            ->groupBy('user_id');
+
+        // Fetch Lesson Progress
+        $lessonIds = $lessons->pluck('id');
+        $allLessonProgress = \App\Models\LessonProgress::whereIn('lesson_id', $lessonIds)
+            ->whereIn('user_id', $memberUserIds)
+            ->where('status', 'completed') // Assuming 'completed' or 1
+            ->get()
+            ->groupBy('user_id');
+
+        $totalLessons = $lessons->count();
+        $totalCourseAssignments = $courseAssignments->count(); // Course Assignments only? Or all?
+        // ProgressCard logic seemed to separate categories.
+        // But table view merges them?
+        // Let's use totals matching the breakdown if possible. 
+        // For simple grid view, usually we want "Assignments" (All) and "Quizzes" (All).
+        $totalAssignments = $courseAssignments->count() + $lessonAssignments->count();
+        $totalQuizzes = $courseQuizzes->count(); // Course Quizzes? Plus lesson quizzes?
+        // Lesson quizzes are usually embedded. But let's count Course Quizzes as "Quizzes".
+
+        // Fetch Attendance Data - Group by group_id for per-group calculation
+        $allCourseAttendances = $course->courseAttendances()->get();
+        // Group attendance sessions by group_id (null group_id means course-wide)
+        $attendancesByGroup = $allCourseAttendances->groupBy('group_id');
+        
+        // Get all attendance details for members (status 1 = present, 2 = late, etc.)
+        $allAttendanceDetails = \App\Models\AttendanceDetail::whereIn('course_attendance_id', $allCourseAttendances->pluck('id'))
+            ->whereIn('course_member_id', $courseMembers->pluck('id'))
+            ->get()
+            ->groupBy('course_member_id');
+
         $courseMembersProgress = [];
         foreach ($courseMembers as $member) {
             $memberProgress = $member->memberProgress;
+            $userId = $member->user_id;
+
+            // Calculate Scores
+            $courseAssignScore = isset($allAssignmentAnswers[$userId]) 
+                ? $allAssignmentAnswers[$userId]->whereIn('assignment_id', $courseAssignmentIds)->sum('points') 
+                : 0;
+
+            $lessonAssignScore = isset($allAssignmentAnswers[$userId]) 
+                ? $allAssignmentAnswers[$userId]->whereIn('assignment_id', $lessonAssignmentIds)->sum('points') 
+                : 0;
+
+            $courseQuizScore = isset($allQuizResults[$userId]) 
+                ? $allQuizResults[$userId]->sum('score') 
+                : 0;
+
+            $lessonTestScore = 0;
+            if (isset($allQuestionAnswers[$userId])) {
+                foreach ($allQuestionAnswers[$userId] as $ans) {
+                    if ($ans->question && $ans->answer_id == $ans->question->correct_option_id) {
+                        $lessonTestScore += $ans->question->points ?? 1;
+                    }
+                }
+            }
+
+            // Calculate Counts for Grid View
+            $lessonsCompleted = isset($allLessonProgress[$userId]) ? $allLessonProgress[$userId]->count() : 0;
+            
+            $assignmentsCompleted = isset($allAssignmentAnswers[$userId]) 
+                ? $allAssignmentAnswers[$userId]->unique('assignment_id')->count() 
+                : 0;
+
+            $quizzesCompleted = isset($allQuizResults[$userId]) 
+                ? $allQuizResults[$userId]->unique('quiz_id')->count() 
+                : 0;
+            
+            // Calculate Progress Percentages for Grid View
+            $lessonsProgressPct = ($totalLessons > 0) ? round(($lessonsCompleted / $totalLessons) * 100) : 0;
+            $assignmentsProgressPct = ($totalAssignments > 0) ? round(($assignmentsCompleted / $totalAssignments) * 100) : 0;
+            $quizzesProgressPct = ($totalQuizzes > 0) ? round(($quizzesCompleted / $totalQuizzes) * 100) : 0;
+
+            // Calculate Attendance Percentage (Per Group)
+            $memberId = $member->id;
+            $memberGroupId = $member->group_id; // Student's group
+            
+            // Get attendance sessions for this member's group (or course-wide if no group)
+            $groupAttendanceSessions = isset($attendancesByGroup[$memberGroupId]) 
+                ? $attendancesByGroup[$memberGroupId] 
+                : collect([]);
+            $totalGroupAttendanceSessions = $groupAttendanceSessions->count();
+            
+            // Filter member's attendance records to only include those from their group's sessions
+            $memberAttendance = isset($allAttendanceDetails[$memberId]) ? $allAttendanceDetails[$memberId] : collect([]);
+            $groupSessionIds = $groupAttendanceSessions->pluck('id');
+            $memberGroupAttendance = $memberAttendance->whereIn('course_attendance_id', $groupSessionIds);
+            
+            // Count UNIQUE sessions where student was present (status 1=Present, 2=Late)
+            // This prevents counting duplicate records for the same session
+            $attendancePresent = $memberGroupAttendance
+                ->whereIn('status', [1, 2])
+                ->pluck('course_attendance_id')
+                ->unique()
+                ->count();
+            
+            $attendanceRate = ($totalGroupAttendanceSessions > 0) ? round(($attendancePresent / $totalGroupAttendanceSessions) * 100) : 0;
+
+            // Calculate totals
+            $rawTotal = $courseAssignScore + $lessonAssignScore + $courseQuizScore + $lessonTestScore + ($member->bonus_points ?? 0);
+            
+            // Calculate Real-time Grade
+            $percentage = ($course->total_score > 0) ? ($rawTotal / $course->total_score) * 100 : 0;
+            $realtimeGrade = \App\Models\CourseMember::calculateGradeFromPercentage($percentage);
+            
+            // Effective Grade (Prioritize edited_grade)
+            $finalGrade = $member->edited_grade ?? $realtimeGrade;
+            $finalGradeName = \App\Models\CourseMember::getGradeNameFromGrade($finalGrade);
+
             $courseMembersProgress[] = [
                 'member' => $member,
-                'progress' => $memberProgress,
+                'progress' => $memberProgress, // Keep existing structure just in case
+                // Merge Grid Data into member object? 
+                // ProgressList logic merges everything. So we can add keys here.
+                'lessons_completed' => $lessonsCompleted,
+                'total_lessons' => $totalLessons,
+                'lessons_progress' => $lessonsProgressPct, // %
+
+                'assignments_completed' => $assignmentsCompleted,
+                'total_assignments' => $totalAssignments,
+                'assignments_progress' => $assignmentsProgressPct, // %
+
+                'quizzes_completed' => $quizzesCompleted,
+                'total_quizzes' => $totalQuizzes,
+                'quizzes_progress' => $quizzesProgressPct, // %
+
+                // Attendance Stats (Per Group)
+                'attendance_present' => $attendancePresent,
+                'total_attendance' => $totalGroupAttendanceSessions,
+                'attendance_rate' => $attendanceRate, // %
+                
+                'overall_progress' => round($percentage), // Use Grade Percentage as overall
+
+                'scores' => [
+                    'lesson_assignments' => $lessonAssignScore,
+                    'lesson_quizzes' => $lessonTestScore,
+                    'course_assignments' => $courseAssignScore,
+                    'course_quizzes' => $courseQuizScore,
+                    'bonus_points' => $member->bonus_points ?? 0,
+                    'edited_grade' => $member->edited_grade, // New field
+                    'total_score' => $rawTotal, // Calculated realtime
+                    'db_achieved_score' => $member->achieved_score, // Stored in DB
+                    'grade_progress' => $finalGrade, // Effective Grade
+                    'calculated_grade' => $realtimeGrade, // Original Calculated Grade
+                    'grade_name' => $finalGradeName, // Effective Grade Name
+                ]
             ];
         }
+
+        // Calculate Class Stats (Overall)
+        $totalMembers = $course->courseMembers()->count();
+        $completedMembers = $course->courseMembers()->where('course_member_status', 1)->count();
 
         return response()->json([
             'isCourseAdmin' => $course->user_id === auth()->id(),
@@ -349,11 +561,22 @@ class CourseController extends Controller
             'groups'        => CourseGroupResource::collection($course->courseGroups),
             'assignments'       => AssignmentResource::collection($course->courseAssignments),      
             'quizzes'           => CourseQuizResource::collection($course->courseQuizzes),
-            'members'           => CourseMemberResource::collection($course->courseMembers),
-            'courseMembersProgress' => $courseMembersProgress,
+            // 'members'           => CourseMemberResource::collection($course->courseMembers), // Removing full list to save bandwidth
+            'courseMembersProgress' => $courseMembersProgress, // Data for current page
             'courseMemberOfAuth'=> $course->courseMembers()->where('user_id', auth()->id())->first(),
+            'pagination' => [
+                'total' => $courseMembers->total(),
+                'per_page' => $courseMembers->perPage(),
+                'current_page' => $courseMembers->currentPage(),
+                'last_page' => $courseMembers->lastPage(),
+                'from' => $courseMembers->firstItem(),
+                'to' => $courseMembers->lastItem(),
+            ],
+            'stats' => [
+                'total' => $totalMembers,
+                'completed' => $completedMembers,
+            ]
         ]);
-
     }
 
     public function settings(Course $course)

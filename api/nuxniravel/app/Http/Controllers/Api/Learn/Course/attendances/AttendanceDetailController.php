@@ -26,10 +26,26 @@ class AttendanceDetailController extends Controller
 
     /**
      * Store a newly created resource in storage.
+     * Uses updateOrCreate to prevent duplicate records for same member and attendance session
      */
     public function store(CourseAttendance $attendance, Request $request)
     {
-        // compute time in is late or not by compare with attendance finish time+20 minutes
+        // Check if record already exists for this session and member
+        $existingDetail = AttendanceDetail::where('course_attendance_id', $attendance->id)
+            ->where('course_member_id', $request->course_member_id)
+            ->first();
+        
+        if ($existingDetail) {
+            // Return existing record without creating duplicate
+            return response()->json([
+                'success' => true,
+                'message' => 'Already checked in',
+                'attendance_detail' => new AttendanceDetailResource($existingDetail),
+                'already_exists' => true,
+            ], 200);
+        }
+
+        // Compute if late by comparing with attendance start time + late threshold
         $isLate = now() > Carbon::parse($attendance->start_at)->addMinutes($attendance->late_time);
 
         $detail = $attendance->details()->create([
@@ -42,10 +58,10 @@ class AttendanceDetailController extends Controller
             'comments'              => $request->comments,
         ]);
 
-
         return response()->json([
             'success' => true,
             'attendance_detail' => new AttendanceDetailResource($detail),
+            'already_exists' => false,
         ], 200);
     }
 

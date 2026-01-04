@@ -23,11 +23,11 @@ class CourseMember extends Model
     protected function casts(): array
     {
         return [
-            'edited_grade' => 'integer',
+            'edited_grade' => 'float',
             'achieved_score' => 'integer',
             'bonus_points' => 'integer',
             'efficiency' => 'integer',
-            'grade_progress' => 'integer',
+            'grade_progress' => 'float',
             'order_number' => 'integer',
             'member_code' => 'integer',
             'enrollment_date' => 'datetime',
@@ -94,18 +94,34 @@ class CourseMember extends Model
     /**
      * Calculate Thai grade based on percentage score
      * 
-     * Thai Grading System (Integer-based):
-     * - 80-100% = 4 (A)
-     * - 75-79% = 3 (B+/B)
-     * - 70-74% = 3 (B)
-     * - 65-69% = 2 (C+/C)
-     * - 60-64% = 2 (C)
-     * - 55-59% = 1 (D+/D)
-     * - 50-54% = 1 (D)
-     * - 0-49% = 0 (F)
-     * - Incomplete/No score = null
+     /**
+     * Calculate Thai grade based on percentage score (Static helper)
      */
-    public function getCalculatedGrade(): ?int
+    public static function calculateGradeFromPercentage($percentage)
+    {
+        if ($percentage >= 80) {
+            return 4.0;
+        } elseif ($percentage >= 75) {
+            return 3.5;
+        } elseif ($percentage >= 70) {
+            return 3.0;
+        } elseif ($percentage >= 65) {
+            return 2.5;
+        } elseif ($percentage >= 60) {
+            return 2.0;
+        } elseif ($percentage >= 55) {
+            return 1.5;
+        } elseif ($percentage >= 50) {
+            return 1.0;
+        } else {
+            return 0.0;
+        }
+    }
+
+    /**
+     * Calculate Thai grade based on percentage score (Instance method)
+     */
+    public function getCalculatedGrade(): ?float
     {
         $percentage = $this->getPercentageScore();
         
@@ -113,23 +129,27 @@ class CourseMember extends Model
             return null;
         }
 
-        if ($percentage >= 80) {
-            return 4; // A (80-100)
-        } elseif ($percentage >= 75) {
-            return 3; // B+ (75-79)
-        } elseif ($percentage >= 70) {
-            return 3; // B (70-74)
-        } elseif ($percentage >= 65) {
-            return 2; // C+ (65-69)
-        } elseif ($percentage >= 60) {
-            return 2; // C (60-64)
-        } elseif ($percentage >= 55) {
-            return 1; // D+ (55-59)
-        } elseif ($percentage >= 50) {
-            return 1; // D (50-54)
-        } else {
-            return 0; // F (0-49)
-        }
+        return self::calculateGradeFromPercentage($percentage);
+    }
+
+    /**
+     * Get grade name from numeric grade (Static helper)
+     */
+    public static function getGradeNameFromGrade($grade)
+    {
+        $gradeStr = (string)$grade;
+        $gradeNames = [
+            '4' => 'A',
+            '3.5' => 'B+',
+            '3' => 'B',
+            '2.5' => 'C+',
+            '2' => 'C',
+            '1.5' => 'D+',
+            '1' => 'D',
+            '0' => 'F'
+        ];
+
+        return $gradeNames[$gradeStr] ?? null;
     }
 
     /**
@@ -137,17 +157,9 @@ class CourseMember extends Model
      */
     public function getGradeName(): ?string
     {
-        $grade = $this->getCalculatedGrade();
-        
-        $gradeNames = [
-            4 => 'A',
-            3 => 'B+/B',
-            2 => 'C+/C',
-            1 => 'D+/D',
-            0 => 'F'
-        ];
-
-        return $gradeNames[$grade] ?? null;
+        // Prioritize edited_grade, then grade_progress, then calculation
+        $grade = $this->edited_grade ?? $this->grade_progress ?? $this->getCalculatedGrade();
+        return self::getGradeNameFromGrade($grade);
     }
 
     /**

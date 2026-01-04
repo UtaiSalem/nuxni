@@ -183,6 +183,7 @@ const truncateText = (text, maxLength = 50) => {
 const expandedAssignments = ref({});
 const expandedQuizzes = ref({});
 
+
 // Toggle expanded state
 const toggleExpanded = (id, type) => {
     if (type === 'assignment') {
@@ -191,6 +192,85 @@ const toggleExpanded = (id, type) => {
         expandedQuizzes.value[id] = !expandedQuizzes.value[id];
     }
 };
+
+const handlePrint = () => {
+    window.print();
+};
+
+/* Grade Calculator Logic */
+const isCalculatorOpen = ref(false);
+const hypotheticalScores = ref({});
+
+const toggleCalculator = () => {
+    isCalculatorOpen.value = !isCalculatorOpen.value;
+    if (isCalculatorOpen.value && Object.keys(hypotheticalScores.value).length === 0) {
+        // Initialize with current scores or 0 for unsubmitted
+        props.course_assignments.forEach(assignment => {
+            const answer = props.member_assignments_answers.data.find(a => a.assignment_id === assignment.id);
+            if (!answer) {
+                hypotheticalScores.value[`assignment_${assignment.id}`] = assignment.points; // Default to max points for optimism
+            }
+        });
+        props.course_quizzes.forEach(quiz => {
+            const result = props.member_quizes_results.data.find(r => r.quiz_id === quiz.id);
+            if (!result) {
+                hypotheticalScores.value[`quiz_${quiz.id}`] = quiz.total_score;
+            }
+        });
+    }
+};
+
+const projectedTotalScore = computed(() => {
+    let score = 0;
+    
+    props.course_assignments.forEach(assignment => {
+        const key = `assignment_${assignment.id}`;
+        if (hypotheticalScores.value[key] !== undefined) {
+             // Use hypothetical if defined (meaning it was unsubmitted/target for calc)
+            score += Number(hypotheticalScores.value[key]) || 0;
+        } else {
+             // Submitted/Actual
+             const answer = props.member_assignments_answers.data.find(a => a.assignment_id === assignment.id);
+             score += answer ? (answer.points || 0) : 0;
+        }
+    });
+    
+    props.course_quizzes.forEach(quiz => {
+        const key = `quiz_${quiz.id}`;
+        if (hypotheticalScores.value[key] !== undefined) {
+            score += Number(hypotheticalScores.value[key]) || 0;
+        } else {
+            const result = props.member_quizes_results.data.find(r => r.quiz_id === quiz.id);
+            score += result ? (result.score || 0) : 0;
+        }
+    });
+    
+    return score;
+});
+
+const projectedScorePercentage = computed(() => {
+    if (!props.course.data.total_score || props.course.data.total_score === 0) return 0;
+    return (projectedTotalScore.value / props.course.data.total_score) * 100;
+});
+
+const projectedGrade = computed(() => {
+     const score = projectedTotalScore.value;
+     const passingThreshold = props.course.data.total_score / 2;
+     
+     if (score <= passingThreshold) return { grade: '0', label: '0 (ไม่ผ่าน)', status: 'fail' };
+     
+     const percentage = projectedScorePercentage.value;
+     
+    if (percentage >= 90) return { grade: '4.0', label: '4.0 (ดีเยี่ยม)', status: 'excellent' };
+    if (percentage >= 85) return { grade: '3.5', label: '3.5 (ดีมาก)', status: 'very-good' };
+    if (percentage >= 80) return { grade: '3.0', label: '3.0 (ดี)', status: 'good' };
+    if (percentage >= 75) return { grade: '2.5', label: '2.5 (ค่อนข้างดี)', status: 'fairly-good' };
+    if (percentage >= 70) return { grade: '2.0', label: '2.0 (พอใช้)', status: 'fair' };
+    if (percentage >= 60) return { grade: '1.5', label: '1.5 (ผ่านขั้นต่ำ)', status: 'minimum-pass' };
+    if (percentage > passingThreshold / props.course.data.total_score * 100) return { grade: '1.0', label: '1.0 (ผ่าน)', status: 'pass' };
+    
+    return { grade: '0', label: '0 (ไม่ผ่าน)', status: 'fail' };
+});
 </script>
 
 <template>
@@ -212,9 +292,16 @@ const toggleExpanded = (id, type) => {
                     <div class="relative z-10">
                         <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
                             <div class="mb-6 md:mb-0">
-                                <h1 class="text-4xl font-bold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-100">
-                                    รายละเอียดความก้าวหน้าเกรดของสมาชิก
-                                </h1>
+                                <div class="flex items-center gap-4 mb-3">
+                                    <button @click="$router.back()" class="p-2 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors print:hidden">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                        </svg>
+                                    </button>
+                                    <h1 class="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-100">
+                                        รายละเอียดความก้าวหน้าเกรด
+                                    </h1>
+                                </div>
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                                     <div class="bg-white/20 backdrop-blur-md rounded-xl p-4 transition-all duration-200 hover:bg-white/25">
                                         <p class="text-sm opacity-90 mb-1">เลขที่</p>
@@ -229,6 +316,132 @@ const toggleExpanded = (id, type) => {
                                         <p class="text-2xl font-bold">{{ props.member.data.member_name }}</p>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="flex gap-3 print:hidden">
+                                <button @click="toggleCalculator" :class="`flex items-center gap-2 px-4 py-2 ${isCalculatorOpen ? 'bg-white text-indigo-600 shadow-lg' : 'bg-white/20 text-white hover:bg-white/30'} rounded-xl backdrop-blur-md transition-all font-medium border border-transparent`">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                    </svg>
+                                    {{ isCalculatorOpen ? 'ปิดคำนวณเกรด' : 'คำนวณเกรด' }}
+                                </button>
+                                <button @click="handlePrint" class="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-xl backdrop-blur-md transition-all font-medium">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                    </svg>
+                                    พิมพ์ / ส่งออก PDF
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Grade Calculator Section -->
+                <div v-if="isCalculatorOpen" class="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-2xl shadow-xl p-8 mb-8 border border-indigo-100 print:hidden">
+                    <div class="flex justify-between items-start mb-6">
+                        <h2 class="text-2xl font-bold text-indigo-800 flex items-center">
+                            <span class="p-2 bg-indigo-200 rounded-lg mr-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                </svg>
+                            </span>
+                            จำลองการคำนวณเกรด (Grade Calculator)
+                        </h2>
+                        <button @click="toggleCalculator" class="text-gray-500 hover:text-gray-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <!-- Input Section -->
+                        <div class="lg:col-span-2 space-y-6">
+                            <!-- Assignments -->
+                            <div class="bg-white/50 rounded-xl p-4">
+                                <h3 class="font-bold text-gray-700 mb-3 flex items-center">
+                                    <span class="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                                    งานที่ยังไม่ได้ส่ง / ยังไม่ได้ตรวจ
+                                </h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <template v-for="assign in props.course_assignments" :key="assign.id">
+                                        <div v-if="!props.member_assignments_answers.data.find(a => a.assignment_id === assign.id) || !props.member_assignments_answers.data.find(a => a.assignment_id === assign.id).points" 
+                                             class="bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
+                                            <div class="flex justify-between text-sm mb-2">
+                                                <span class="font-medium text-gray-700 truncate pr-2" :title="assign.title">{{ truncateText(assign.title, 30).text }}</span>
+                                                <span class="text-gray-500 text-xs bg-gray-100 px-2 py-0.5 rounded-full">Max: {{ assign.points }}</span>
+                                            </div>
+                                            <div class="relative">
+                                                <input type="number" 
+                                                       v-model="hypotheticalScores[`assignment_${assign.id}`]"
+                                                       :max="assign.points" 
+                                                       min="0"
+                                                       class="w-full rounded-lg border-gray-200 focus:ring-indigo-500 focus:border-indigo-500 text-sm py-1.5 px-3" 
+                                                       placeholder="คะแนนที่คาดหวัง" />
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <!-- Quizzes -->
+                            <div class="bg-white/50 rounded-xl p-4">
+                                <h3 class="font-bold text-gray-700 mb-3 flex items-center">
+                                    <span class="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
+                                    แบบทดสอบที่ยังไม่ได้ทำ
+                                </h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <template v-for="quiz in props.course_quizzes" :key="quiz.id">
+                                        <div v-if="!props.member_quizes_results.data.find(r => r.quiz_id === quiz.id)" 
+                                             class="bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
+                                            <div class="flex justify-between text-sm mb-2">
+                                                <span class="font-medium text-gray-700 truncate pr-2" :title="quiz.title">{{ truncateText(quiz.title, 30).text }}</span>
+                                                <span class="text-gray-500 text-xs bg-gray-100 px-2 py-0.5 rounded-full">Max: {{ quiz.total_score }}</span>
+                                            </div>
+                                            <input type="number" 
+                                                   v-model="hypotheticalScores[`quiz_${quiz.id}`]"
+                                                   :max="quiz.total_score"
+                                                   min="0" 
+                                                   class="w-full rounded-lg border-gray-200 focus:ring-indigo-500 focus:border-indigo-500 text-sm py-1.5 px-3" 
+                                                   placeholder="คะแนนที่คาดหวัง" />
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Result Section -->
+                        <div class="relative">
+                            <div class="sticky top-4 bg-white rounded-2xl p-6 shadow-lg border border-indigo-100 text-center ring-4 ring-indigo-50/50">
+                                 <p class="text-gray-500 font-medium mb-1 tracking-wide uppercase text-xs">เกรดที่คาดว่าจะได้</p>
+                                 <div class="my-4">
+                                    <div :class="`inline-block px-8 py-6 rounded-2xl border-2 transition-all duration-300 transform hover:scale-105 ${getGradeColor(projectedGrade.status)}`">
+                                        <p class="text-6xl font-black mb-1 leading-none">{{ projectedGrade.grade }}</p>
+                                        <p class="text-sm font-bold opacity-90">{{ projectedGrade.label }}</p>
+                                    </div>
+                                 </div>
+                                 
+                                 <div class="bg-gray-50 rounded-xl p-4 mb-4">
+                                     <div class="flex justify-between items-center mb-2">
+                                         <span class="text-sm text-gray-600">คะแนนปัจจุบัน</span>
+                                         <span class="font-bold text-gray-800">{{ totalAchievedScore }}</span>
+                                     </div>
+                                     <div class="flex justify-between items-center mb-2">
+                                         <span class="text-sm text-gray-600">+ คะแนนจำลอง</span>
+                                         <span class="font-bold text-indigo-600">+{{ (projectedTotalScore - totalAchievedScore).toFixed(0) }}</span>
+                                     </div>
+                                     <div class="border-t border-gray-200 my-2 pt-2 flex justify-between items-end">
+                                         <span class="text-sm font-bold text-gray-700">รวมทั้งหมด</span>
+                                         <div class="text-right">
+                                             <span class="text-lg font-black text-indigo-700 block">{{ projectedTotalScore }} / {{ props.course.data.total_score }}</span>
+                                             <span class="text-xs text-gray-500 font-medium">({{ projectedScorePercentage.toFixed(1) }}%)</span>
+                                         </div>
+                                     </div>
+                                 </div>
+
+                                 <button @click="toggleCalculator" class="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg text-sm font-medium transition-colors">
+                                     ปิดเครื่องคิดเลข
+                                 </button>
                             </div>
                         </div>
                     </div>

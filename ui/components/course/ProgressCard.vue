@@ -16,6 +16,11 @@ const emit = defineEmits<{
 
 // Calculate overall progress
 const overallProgress = computed(() => {
+  // Use backend provided percentage if available (Accuracy prioritized)
+  if (props.member.overall_progress !== undefined) {
+    return props.member.overall_progress
+  }
+
   const lessons = props.member.lessons_progress || 0
   const assignments = props.member.assignments_progress || 0
   const quizzes = props.member.quizzes_progress || 0
@@ -83,12 +88,39 @@ const formatDate = (date: string) => {
         </p>
       </div>
       
-      <!-- Overall Score -->
-      <div class="text-right">
-        <div class="text-2xl font-bold" :class="getProgressTextColor(overallProgress)">
-          {{ overallProgress }}%
+      <!-- Radial Progress with Grade -->
+      <div class="relative w-16 h-16 flex-shrink-0">
+        <!-- Background Circle -->
+        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+          <circle
+            cx="18"
+            cy="18"
+            r="15.5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="3"
+            class="text-gray-200 dark:text-gray-700"
+          />
+          <!-- Progress Circle -->
+          <circle
+            cx="18"
+            cy="18"
+            r="15.5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="3"
+            stroke-linecap="round"
+            :class="getProgressTextColor(overallProgress)"
+            :stroke-dasharray="`${overallProgress * 0.97} 100`"
+          />
+        </svg>
+        <!-- Grade Text in Center -->
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+          <span class="text-sm font-bold" :class="getProgressTextColor(overallProgress)">
+            {{ member.scores?.grade_name || '-' }}
+          </span>
+          <span class="text-[10px] text-gray-400">{{ overallProgress }}%</span>
         </div>
-        <p class="text-xs text-gray-400">ความคืบหน้า</p>
       </div>
     </div>
     
@@ -158,22 +190,22 @@ const formatDate = (date: string) => {
     <!-- Stats Row -->
     <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 grid grid-cols-3 gap-2 text-center">
       <div>
-        <div class="text-lg font-semibold text-gray-900 dark:text-white">
+        <div class="text-lg font-semibold" :class="getProgressTextColor(member.attendance_rate || 0)">
           {{ member.attendance_rate || 0 }}%
         </div>
-        <p class="text-xs text-gray-400">การเข้าเรียน</p>
+        <p class="text-xs text-gray-400">เข้าเรียน ({{ member.attendance_present || 0 }}/{{ member.total_attendance || 0 }})</p>
       </div>
       <div>
-        <div class="text-lg font-semibold text-gray-900 dark:text-white">
-          {{ member.avg_score || 0 }}
+        <div class="text-lg font-semibold text-blue-600 dark:text-blue-400">
+          {{ member.scores?.total_score || 0 }}
         </div>
-        <p class="text-xs text-gray-400">คะแนนเฉลี่ย</p>
+        <p class="text-xs text-gray-400">คะแนนรวม</p>
       </div>
       <div>
-        <div class="text-lg font-semibold text-gray-900 dark:text-white">
-          {{ member.total_time_spent || '0h' }}
+        <div class="text-lg font-semibold" :class="getProgressTextColor(overallProgress)">
+          {{ member.scores?.grade_name || '-' }}
         </div>
-        <p class="text-xs text-gray-400">เวลาเรียน</p>
+        <p class="text-xs text-gray-400">เกรด</p>
       </div>
     </div>
   </div>

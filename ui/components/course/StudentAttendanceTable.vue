@@ -365,8 +365,8 @@ const getStatusConfig = (status: number | null | undefined) => {
               <button
                 v-else-if="isAttendanceActive(attendance)"
                 @click="handleCheckIn(attendance)"
-                :disabled="checkingInId === attendance.id"
-                class="inline-flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="checkingInId !== null"
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none"
                 :class="wouldBeLate(attendance) 
                   ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-800/50' 
                   : 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800/50'"
@@ -381,7 +381,7 @@ const getStatusConfig = (status: number | null | undefined) => {
                   :icon="wouldBeLate(attendance) ? 'heroicons:clock-20-solid' : 'heroicons:hand-raised-20-solid'" 
                   class="w-5 h-5"
                 />
-                <span>{{ wouldBeLate(attendance) ? 'รายงานตัว (สาย)' : 'รายงานตัว' }}</span>
+                <span>{{ checkingInId === attendance.id ? 'กำลังรายงานตัว...' : (wouldBeLate(attendance) ? 'รายงานตัว (สาย)' : 'รายงานตัว') }}</span>
               </button>
               
               <!-- Not started yet -->

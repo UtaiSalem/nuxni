@@ -1,10 +1,10 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Icon } from '@iconify/vue';
 import Swal from 'sweetalert2';
 import { router } from '@inertiajs/vue3';
 
-import CoursesLayout from '@/Layouts/CoursesLayout.vue';
+import CoursesLayout from '@/layouts/CoursesLayout.vue';
 
 import VueDatePicker from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';
@@ -39,6 +39,10 @@ const defaultFormValue = ref({
   tuition_fees: 0,
   saleable: true,
   price: 0,
+  discount: 0,
+  discount_type: 'fixed',
+  semester: '',
+  academic_year: '',
   status: true,
   cover: '',
   // cover: tempCover.value === '/storage/images/courses/covers/default_cover.jpg' ? null : tempCover.value,
@@ -59,7 +63,12 @@ const form = ref({
   auto_accept_members: true,
   tuition_fees: 0,
   saleable: true,
+  saleable: true,
   price: 0,
+  discount: 0,
+  discount_type: 'fixed',
+  semester: '',
+  academic_year: '',
   status: true,
   cover: '',
 });
@@ -121,6 +130,22 @@ function handleEndDateSelection(endDateData){
     form.value.end_date = new Date(crsEndDate.value) || null;
 }
 
+
+
+// Net Price Calculation
+const netPrice = computed(() => {
+    if (!form.value.saleable) return 0;
+    const price = Number(form.value.price) || 0;
+    const discount = Number(form.value.discount) || 0;
+    
+    if (form.value.discount_type === 'percent') {
+        const discountAmount = (price * discount) / 100;
+        return Math.max(0, price - discountAmount);
+    }
+    
+    return Math.max(0, price - discount);
+});
+
 async function handleSubmitForm(){
   try {
     const config = { headers: { 'content-type': 'multipart/form-data' } }
@@ -140,6 +165,10 @@ async function handleSubmitForm(){
     courseFormData.append('tuition_fees', form.value.tuition_fees);
     courseFormData.append('saleable', form.value.saleable ? 1 : 0);
     courseFormData.append('price', form.value.price);
+    courseFormData.append('discount', form.value.discount);
+    courseFormData.append('discount_type', form.value.discount_type);
+    courseFormData.append('semester', form.value.semester);
+    courseFormData.append('academic_year', form.value.academic_year);
     courseFormData.append('status', form.value.status ? 1 : 0);
     
     // form.value.cover ? courseFormData.append('cover', form.value.cover): null;
@@ -288,6 +317,34 @@ async function handleSubmitForm(){
             </div>
 
             <div class="grid sm:grid-cols-2 gap-2">
+                 <div class="relative sm:my-3">
+                    <select id="course-semester-input" v-model="form.semester"
+                      class="relative w-full h-12 px-4 pl-4 transition-all border rounded-lg outline-none focus-visible:outline-none peer border-slate-300 text-slate-500 bg-white focus:border-violet-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400 appearance-none">
+                      <option value="">เลือกภาคเรียน</option>
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="summer">ฤดูร้อน</option>
+                    </select>
+                     <label for="course-semester-input"
+                      class="cursor-text peer-focus:cursor-default peer-autofill:-top-2 absolute left-2 -top-2 z-[1] px-2 text-xs text-slate-400 transition-all before:absolute before:top-0 before:left-0 before:z-[-1] before:block before:h-full before:w-full before:bg-white before:transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:left-4 peer-placeholder-shown:text-sm peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-violet-500 peer-disabled:cursor-not-allowed peer-disabled:text-slate-400 peer-disabled:before:bg-transparent">
+                      ภาคเรียนที่
+                    </label>
+                  </div>
+
+                  <div class="relative sm:my-3">
+                    <input id="course-academic-year-input" type="text" v-model="form.academic_year" placeholder=" "
+                      class="relative w-full h-12 px-4 pl-12 placeholder-transparent transition-all border rounded-lg outline-none focus-visible:outline-none peer border-slate-300 text-slate-500 autofill:bg-white invalid:border-pink-500 invalid:text-pink-500 focus:border-violet-500 focus:outline-none invalid:focus:border-pink-500 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400" />
+                    <label for="course-academic-year-input"
+                      class="cursor-text peer-focus:cursor-default peer-autofill:-top-2 absolute left-4 -top-2 z-[1] px-2 text-xs text-slate-400 transition-all before:absolute before:top-0 before:left-0 before:z-[-1] before:block before:h-full before:w-full before:bg-white before:transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:left-10 peer-placeholder-shown:text-sm peer-required:after:text-pink-500 peer-required:after:content-['\00a0*'] peer-invalid:text-pink-500 peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-violet-500 peer-invalid:peer-focus:text-pink-500 peer-disabled:cursor-not-allowed peer-disabled:text-slate-400 peer-disabled:before:bg-transparent">
+                      ปีการศึกษา (เช่น 2567)
+                    </label>
+                    <Icon icon="heroicons:calendar"
+                      class="absolute w-5 h-5 top-4 left-4 text-violet-600 peer-disabled:cursor-not-allowed" />
+                  </div>
+            </div>
+
+            <div class="grid sm:grid-cols-2 gap-2">
 
               <div class="relative sm:my-3">
                 <input id="course-credit_unit-input" type="number" min="0" v-model="form.credit_units" placeholder="0"
@@ -415,32 +472,63 @@ async function handleSubmitForm(){
 
             <hr class="bg-white border-white" />
 
-            <div class="relative flex items-center mt-6 mb-2">
-              <input
-                class="w-4 h-4 mt-6 transition-colors bg-white border-2 rounded appearance-none cursor-pointer focus-visible:outline-none peer border-slate-500 checked:border-violet-500 checked:bg-violet-500 checked:hover:border-violet-600 checked:hover:bg-violet-600 focus:outline-none checked:focus:border-violet-700 checked:focus:bg-violet-700 disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-50"
-                type="checkbox" id="course-saling-input" v-model="form.saleable" :checked="form.saleable"
-                placeholder="0" />
-              <label
-                class="pl-2 mt-6 cursor-pointer text-slate-500 peer-disabled:cursor-not-allowed peer-disabled:text-slate-400"
-                for="course-saling-input">
-                <p class="flex">
-                  <span>ขาย </span>
-                  <span class="hidden md:block">(เมื่อมีการขอซื้อ)</span>
-                </p>
-              </label>
-
-              <div class="relative ml-2 md:ml-4" v-if="form.saleable">
-                <input id="course-price-input" type="number" v-model="form.price" placeholder=""
-                  class="relative w-full h-12 px-4 pl-12 placeholder-transparent transition-all border rounded outline-none focus-visible:outline-none peer border-slate-200 text-slate-500 autofill:bg-white invalid:border-pink-500 invalid:text-pink-500 focus:border-violet-500 focus:outline-none invalid:focus:border-pink-500 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400" />
-                <label for="course-price-input"
-                  class="cursor-text peer-focus:cursor-default peer-autofill:-top-2 absolute left-2 -top-2 z-[1] px-2 text-xs text-slate-400 transition-all before:absolute before:top-0 before:left-0 before:z-[-1] before:block before:h-full before:w-full before:bg-white before:transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:left-10 peer-placeholder-shown:text-sm peer-required:after:text-pink-500 peer-required:after:content-['\00a0*'] peer-invalid:text-pink-500 peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-violet-500 peer-invalid:peer-focus:text-pink-500 peer-disabled:cursor-not-allowed peer-disabled:text-slate-400 peer-disabled:before:bg-transparent">
-                  ราคา
+            <div class="grid grid-cols-1 gap-4 my-4">
+              <div class="relative flex items-center">
+                <input
+                  class="w-4 h-4 transition-colors bg-white border-2 rounded appearance-none cursor-pointer focus-visible:outline-none peer border-slate-500 checked:border-violet-500 checked:bg-violet-500 checked:hover:border-violet-600 checked:hover:bg-violet-600 focus:outline-none checked:focus:border-violet-700 checked:focus:bg-violet-700 disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-50"
+                  type="checkbox" id="course-saling-input" v-model="form.saleable" :checked="form.saleable" />
+                <label
+                  class="pl-2 cursor-pointer text-slate-500 peer-disabled:cursor-not-allowed peer-disabled:text-slate-400"
+                  for="course-saling-input">
+                  <p class="flex">
+                    <span>ขาย </span>
+                    <span class="hidden md:block ml-1">(เมื่อมีการขอซื้อ)</span>
+                  </p>
                 </label>
-                <Icon icon="noto:money-bag"
-                  class="absolute w-6 h-6 top-3 left-4 stroke-slate-400 peer-disabled:cursor-not-allowed" />
               </div>
 
-              <p  v-if="form.saleable" class="ml-2 mt-6">บาท</p>
+              <div v-if="form.saleable" class="grid grid-cols-1 md:grid-cols-2 gap-4 pl-0 md:pl-6">
+                  <div class="relative">
+                    <input id="course-price-input" type="number" v-model="form.price" placeholder=""
+                      class="relative w-full h-12 px-4 pl-12 placeholder-transparent transition-all border rounded outline-none focus-visible:outline-none peer border-slate-200 text-slate-500 autofill:bg-white invalid:border-pink-500 invalid:text-pink-500 focus:border-violet-500 focus:outline-none invalid:focus:border-pink-500 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400" />
+                    <label for="course-price-input"
+                      class="cursor-text peer-focus:cursor-default peer-autofill:-top-2 absolute left-2 -top-2 z-[1] px-2 text-xs text-slate-400 transition-all before:absolute before:top-0 before:left-0 before:z-[-1] before:block before:h-full before:w-full before:bg-white before:transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:left-10 peer-placeholder-shown:text-sm peer-required:after:text-pink-500 peer-required:after:content-['\00a0*'] peer-invalid:text-pink-500 peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-violet-500 peer-invalid:peer-focus:text-pink-500 peer-disabled:cursor-not-allowed peer-disabled:text-slate-400 peer-disabled:before:bg-transparent">
+                      ราคา (บาท)
+                    </label>
+                    <Icon icon="noto:money-bag"
+                      class="absolute w-6 h-6 top-3 left-4 stroke-slate-400 peer-disabled:cursor-not-allowed" />
+                  </div>
+
+                  <div class="flex gap-2">
+                    <div class="relative flex-1">
+                        <input id="course-discount-input" type="number" v-model="form.discount" placeholder=""
+                          :max="form.discount_type === 'percent' ? 100 : form.price"
+                          class="relative w-full h-12 px-4 pl-12 placeholder-transparent transition-all border rounded outline-none focus-visible:outline-none peer border-slate-200 text-slate-500 autofill:bg-white invalid:border-pink-500 invalid:text-pink-500 focus:border-violet-500 focus:outline-none invalid:focus:border-pink-500 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400" />
+                        <label for="course-discount-input"
+                          class="cursor-text peer-focus:cursor-default peer-autofill:-top-2 absolute left-2 -top-2 z-[1] px-2 text-xs text-slate-400 transition-all before:absolute before:top-0 before:left-0 before:z-[-1] before:block before:h-full before:w-full before:bg-white before:transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:left-10 peer-placeholder-shown:text-sm peer-required:after:text-pink-500 peer-required:after:content-['\00a0*'] peer-invalid:text-pink-500 peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-violet-500 peer-invalid:peer-focus:text-pink-500 peer-disabled:cursor-not-allowed peer-disabled:text-slate-400 peer-disabled:before:bg-transparent">
+                          ส่วนลด
+                        </label>
+                        <Icon v-if="form.discount_type === 'fixed'" icon="heroicons:currency-dollar" class="absolute w-6 h-6 top-3 left-4 stroke-slate-400 peer-disabled:cursor-not-allowed" />
+                        <Icon v-else icon="heroicons:receipt-percent" class="absolute w-6 h-6 top-3 left-4 stroke-slate-400 peer-disabled:cursor-not-allowed" />
+                    </div>
+                    <select v-model="form.discount_type" class="h-12 border border-slate-200 rounded px-2 bg-white text-slate-500 focus:border-violet-500 outline-none w-20">
+                        <option value="fixed">บาท</option>
+                        <option value="percent">%</option>
+                    </select>
+                  </div>
+              </div>
+
+              <div v-if="form.saleable" class="pl-0 md:pl-6 border-t pt-4 mt-2">
+                 <div class="flex justify-between items-center text-lg font-bold">
+                   <span class="text-gray-700 dark:text-gray-300">ราคาขายจริง (สุทธิ):</span>
+                   <span class="text-green-600 dark:text-green-400">
+                     {{ netPrice.toLocaleString() }} บาท
+                   </span>
+                 </div>
+                 <p class="text-xs text-gray-500 text-right mt-1" v-if="form.discount > 0">
+                   (จากราคาปกติ {{ form.price }} บาท ลด {{ form.discount_type === 'percent' ? form.discount + '%' : form.discount + ' บาท' }})
+                 </p>
+               </div>
             </div>
 
             <div class="flex space-x-2">

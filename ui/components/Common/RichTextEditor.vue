@@ -63,6 +63,8 @@ const editor = useEditor({
       heading: { levels: [1, 2, 3] },
       codeBlock: false, // Use CodeBlockLowlight instead
       // Disable built-in extensions that we're adding separately
+      link: false,
+      underline: false,
     }),
     Link.configure({
       openOnClick: false,
@@ -94,7 +96,7 @@ const editor = useEditor({
 // Watch for external changes
 watch(() => props.modelValue, (newValue) => {
   if (editor.value && newValue !== editor.value.getHTML()) {
-    editor.value.commands.setContent(newValue, false)
+    editor.value.commands.setContent(newValue, false, { emitUpdate: false })
   }
 })
 

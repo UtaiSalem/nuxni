@@ -33,7 +33,7 @@ class Course extends Model
         'capacity' => 'integer',
         'enrolled_students' => 'integer',
         'rating' => 'integer',
-        'enrolled_students' => 'integer',
+        'discount' => 'integer',
     ];
 
     public function courseSettings(): HasOne
