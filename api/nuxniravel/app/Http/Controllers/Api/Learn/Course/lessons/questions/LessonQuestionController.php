@@ -34,9 +34,6 @@ class LessonQuestionController extends \App\Http\Controllers\Controller
 
         if ($request->filled('options')) {
             foreach ($request->options as $index => $optionData) {
-                // If options are sent as JSON string in FormData, decode might be needed, 
-                // but Laravel usually handles array inputs if named correctly.
-                // Assuming request->options is an array
                 if (is_array($optionData)) {
                      $newOption = $question->options()->create([
                         'text' => $optionData['text'] ?? '',
@@ -47,9 +44,10 @@ class LessonQuestionController extends \App\Http\Controllers\Controller
                     if ($request->hasFile("options.$index.image")) {
                         $image = $request->file("options.$index.image");
                         $fileName = uniqid() . '.' . $image->getClientOriginalExtension();
-                        Storage::disk('public')->putFileAs('images/courses/lessons/quizzes/options', $image, $fileName);
+                        // Correct path: lessons/questions/options
+                        $image_path = Storage::disk('public')->putFileAs('images/courses/lessons/questions/options', $image, $fileName);
                         $newOption->images()->create([
-                            'filename' => $fileName
+                            'filename' => $fileName,
                         ]);
                     }
                 }
@@ -60,9 +58,10 @@ class LessonQuestionController extends \App\Http\Controllers\Controller
             $images = $request->file('images');
             foreach ($images as $image) {
                 $fileName = uniqid() . '.' . $image->getClientOriginalExtension();
-                $image_url = Storage::disk('public')->putFileAs('images/courses/quizzes/questions', $image, $fileName);
+                // Correct path: lessons/questions
+                $image_path = Storage::disk('public')->putFileAs('images/courses/lessons/questions', $image, $fileName);
                 $question->images()->create([
-                    'filename' => $fileName
+                    'filename' => $fileName,
                 ]);
             }
         }
@@ -87,12 +86,7 @@ class LessonQuestionController extends \App\Http\Controllers\Controller
         ]);
 
         // Sync Options
-        // Strategy: We can delete all and recreate, or update existing.
-        // For simplicity in this iteration, if "options" is present, we replace them.
-        // BUT existing ID tracking is better.
-        
         if ($request->filled('options')) {
-            // Keep track of processed IDs
             $processedIds = [];
             
             foreach ($request->options as $index => $optionData) {
@@ -109,14 +103,13 @@ class LessonQuestionController extends \App\Http\Controllers\Controller
 
                         // Check for new image
                         if ($request->hasFile("options.$index.image")) {
-                            // Delete old images? Optional, but good practice if single image per option
-                            // $option->images()->delete(); 
+                            // Delete old image if needed (not implemented here)
                             
                             $image = $request->file("options.$index.image");
                             $fileName = uniqid() . '.' . $image->getClientOriginalExtension();
-                            Storage::disk('public')->putFileAs('images/courses/lessons/quizzes/options', $image, $fileName);
+                            $image_path = Storage::disk('public')->putFileAs('images/courses/lessons/questions/options', $image, $fileName);
                             $option->images()->create([
-                                'filename' => $fileName
+                                'filename' => $fileName,
                             ]);
                         }
                     }
@@ -132,9 +125,9 @@ class LessonQuestionController extends \App\Http\Controllers\Controller
                     if ($request->hasFile("options.$index.image")) {
                         $image = $request->file("options.$index.image");
                         $fileName = uniqid() . '.' . $image->getClientOriginalExtension();
-                        Storage::disk('public')->putFileAs('images/courses/lessons/quizzes/options', $image, $fileName);
+                        $image_path = Storage::disk('public')->putFileAs('images/courses/lessons/questions/options', $image, $fileName);
                         $newOption->images()->create([
-                            'filename' => $fileName
+                            'filename' => $fileName,
                         ]);
                     }
                 }
@@ -149,9 +142,9 @@ class LessonQuestionController extends \App\Http\Controllers\Controller
             $images = $request->file('images');
             foreach ($images as $image) {
                 $fileName = uniqid() . '.' . $image->getClientOriginalExtension();
-                $image_url = Storage::disk('public')->putFileAs('images/courses/quizzes/questions', $image, $fileName);
+                $image_path = Storage::disk('public')->putFileAs('images/courses/lessons/questions', $image, $fileName);
                 $question->images()->create([
-                    'filename' => $fileName
+                    'filename' => $fileName,
                 ]);
             }
         }
@@ -161,7 +154,15 @@ class LessonQuestionController extends \App\Http\Controllers\Controller
              foreach ($request->deleted_images as $imgId) {
                  $img = $question->images()->find($imgId);
                  if ($img) {
-                     Storage::disk('public')->delete($img->image_url);
+                     $path = 'images/courses/lessons/questions/' . $img->filename;
+                     \Log::info('Attempting to delete image: ' . $img->id . ' path: ' . $path);
+                     
+                     if (Storage::disk('public')->exists($path)) {
+                          \Log::info('File exists, deleting...');
+                          Storage::disk('public')->delete($path);
+                     } else {
+                          \Log::warning('File not found at path: ' . $path);
+                     }
                      $img->delete();
                  }
              }
@@ -177,14 +178,21 @@ class LessonQuestionController extends \App\Http\Controllers\Controller
     {
         // Delete images
         foreach ($question->images as $image) {
-            Storage::disk('public')->delete($image->image_url);
+            $path = 'images/courses/lessons/questions/' . $image->filename;
+            if (Storage::disk('public')->exists($path)) {
+                Storage::disk('public')->delete($path);
+            }
+            $image->delete();
         }
         $question->images()->delete();
 
         // Delete options and their images
         foreach ($question->options as $option) {
             foreach ($option->images as $image) {
-                Storage::disk('public')->delete($image->image_url);
+                $path = 'images/courses/lessons/questions/options/' . $image->filename;
+                if (Storage::disk('public')->exists($path)) {
+                    Storage::disk('public')->delete($path);
+                }
             }
             $option->images()->delete();
         }

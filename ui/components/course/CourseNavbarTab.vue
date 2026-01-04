@@ -27,6 +27,7 @@ const activeTab = computed(() => {
   if (path.includes('/members')) return 4
   if (path.includes('/settings')) return 8
   if (path.includes('/member-settings')) return 9
+  if (path.includes('/my-progress')) return 9
   if (path.includes('/progress')) return 10
   // Default to info tab for base course page
   if (path.endsWith(`/courses/${props.courseId}`) || path.endsWith(`/courses/${props.courseId}/`)) return 12

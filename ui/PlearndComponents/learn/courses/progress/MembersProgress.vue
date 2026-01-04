@@ -7,7 +7,7 @@ const props = defineProps({
     isCourseAdmin: Boolean,
 });
 
-const emit = defineEmits(['update:members']);
+const emit = defineEmits(['update:members', 'view']);
 
 // Helper to format number safely
 const fmt = (n) => typeof n === 'number' ? n : '-';
@@ -80,10 +80,10 @@ const fmt = (n) => typeof n === 'number' ? n : '-';
 
                     <!-- Actions -->
                     <td class="px-4 py-3 text-center" v-if="isCourseAdmin">
-                        <Link :href="route('course.admin.member.progress.show', member.id)" 
+                        <button @click="$emit('view', member)" 
                             class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded text-xs px-3 py-1.5 focus:outline-none">
                             รายละเอียด
-                        </Link>
+                        </button>
                     </td>
                 </tr>
                 <tr v-if="members.length === 0">

@@ -39,9 +39,10 @@ class CourseQuizQuestionController extends Controller
             $q_images = $request->file('images');
             foreach ($q_images as $q_image) {
                 $q_img_filename = uniqid() . '.' . $q_image->getClientOriginalExtension();
-                Storage::disk('public')->putFileAs('images/courses/quizzes/questions', $q_image, $q_img_filename);
+                $image_path = Storage::disk('public')->putFileAs('images/courses/quizzes/questions', $q_image, $q_img_filename);
                 $new_question->images()->create([
                     'filename' => $q_img_filename,
+                    'image_url' => $image_path,
                 ]);
             }
         }
@@ -120,9 +121,10 @@ class CourseQuizQuestionController extends Controller
             $q_images = $request->file('images');
             foreach ($q_images as $q_image) {
                 $q_img_filename = uniqid() . '.' . $q_image->getClientOriginalExtension();
-                Storage::disk('public')->putFileAs('images/courses/quizzes/questions', $q_image, $q_img_filename);
+                $image_path = Storage::disk('public')->putFileAs('images/courses/quizzes/questions', $q_image, $q_img_filename);
                 $question->images()->create([
                     'filename' => $q_img_filename,
+                    'image_url' => $image_path,
                 ]);
             }
         }

@@ -62,26 +62,10 @@ class QuestionResource extends JsonResource
             'position'              => $this->position,
             'tags'                  => $this->tags,
             'images'                => $this->images->map(function($img) {
-                // Logic adapted from UserResource to ensure correct URL generation
-                $imgUrl = null;
-                if ($img->url) {
-                    // FIX: User requested path correction
-                    // Convert: images/courses/lessons/quizzes/options/ => images/courses/quizzes/questions/
-                    // Or possibly simple path correction if data was saved wrongly
-                    $fixedPath = str_replace('images/courses/lessons/quizzes/options', 'images/courses/quizzes/questions', $img->url);
-                    
-                    if (filter_var($fixedPath, FILTER_VALIDATE_URL)) {
-                        $imgUrl = $fixedPath;
-                    } else {
-                        // Ensure we use the storage facade correctly
-                        $imgUrl = url(\Illuminate\Support\Facades\Storage::url($fixedPath));
-                    }
-                }
-                
                 return [
                     'id' => $img->id,
-                    'url' => $imgUrl, // Override url with full url
-                    'full_url' => $imgUrl // Keep for compatibility
+                    'url' => $img->url,
+                    'full_url' => $img->full_url
                 ];
             }),
             'authAnswerQuestion'    => $authAnswerQuestion ? $authAnswerQuestion->id : null,

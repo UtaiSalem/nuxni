@@ -239,6 +239,44 @@ const toggleSort = (field: 'name' | 'progress' | 'last_activity') => {
   fetchProgress(1)
 }
 
+// Grade Distribution computed
+const gradeDistribution = computed(() => {
+  const distribution = { A: 0, 'B+': 0, B: 0, 'C+': 0, C: 0, 'D+': 0, D: 0, F: 0 }
+  members.value.forEach((m: any) => {
+    const grade = m.scores?.grade_name || 'F'
+    if (distribution.hasOwnProperty(grade)) {
+      distribution[grade as keyof typeof distribution]++
+    }
+  })
+  return distribution
+})
+
+// Top Performers (top 5 by overall progress)
+const topPerformers = computed(() => {
+  return [...members.value]
+    .sort((a, b) => (b.overall_progress || 0) - (a.overall_progress || 0))
+    .slice(0, 5)
+})
+
+// At-Risk Students (less than 50% overall progress)
+const atRiskStudents = computed(() => {
+  return members.value.filter((m: any) => (m.overall_progress || 0) < 50)
+})
+
+// Average progress
+const averageProgress = computed(() => {
+  if (members.value.length === 0) return 0
+  const total = members.value.reduce((sum: number, m: any) => sum + (m.overall_progress || 0), 0)
+  return Math.round(total / members.value.length)
+})
+
+// Pass rate (students with >= 50% progress)
+const passRate = computed(() => {
+  if (members.value.length === 0) return 0
+  const passed = members.value.filter((m: any) => (m.overall_progress || 0) >= 50).length
+  return Math.round((passed / members.value.length) * 100)
+})
+
 // Init
 onMounted(() => {
   fetchProgress()
@@ -268,22 +306,136 @@ onMounted(() => {
       </button>
     </div>
     
-    <!-- Class Stats -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 text-center shadow-sm">
-        <Icon icon="fluent:people-community-24-regular" class="w-8 h-8 mx-auto text-blue-500" />
-        <div class="text-2xl font-bold text-gray-900 dark:text-white mt-2">
-          {{ stats.total }}
+<!-- Dashboard -->
+    <div class="space-y-4" v-if="members.length > 0">
+      <!-- Key Metrics -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <!-- Total Students -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
+          <div class="flex items-center gap-3">
+            <div class="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <Icon icon="fluent:people-community-24-filled" class="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">ผู้เรียนทั้งหมด</p>
+              <div class="text-xl font-bold text-gray-900 dark:text-white">{{ stats.total }}</div>
+            </div>
+          </div>
         </div>
-        <p class="text-sm text-gray-500">ผู้เรียนทั้งหมด</p>
+
+        <!-- Average Progress -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
+          <div class="flex items-center gap-3">
+            <div class="p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
+              <Icon icon="fluent:data-trending-24-filled" class="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">ความคืบหน้าเฉลี่ย</p>
+              <div class="text-xl font-bold text-gray-900 dark:text-white">{{ averageProgress }}%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pass Rate -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
+          <div class="flex items-center gap-3">
+            <div class="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+              <Icon icon="fluent:checkmark-starburst-24-filled" class="w-6 h-6 text-green-600 dark:text-green-400" />
+            </div>
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">ผ่านเกณฑ์ (>50%)</p>
+              <div class="text-xl font-bold text-gray-900 dark:text-white">{{ passRate }}%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Completed -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
+          <div class="flex items-center gap-3">
+            <div class="p-2 bg-teal-50 dark:bg-teal-900/20 rounded-lg">
+              <Icon icon="fluent:trophy-24-filled" class="w-6 h-6 text-teal-600 dark:text-teal-400" />
+            </div>
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">เรียนจบแล้ว</p>
+              <div class="text-xl font-bold text-gray-900 dark:text-white">{{ stats.completed }}</div>
+            </div>
+          </div>
+        </div>
       </div>
-      
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 text-center shadow-sm">
-        <Icon icon="fluent:checkmark-circle-24-regular" class="w-8 h-8 mx-auto text-green-500" />
-        <div class="text-2xl font-bold text-gray-900 dark:text-white mt-2">
-          {{ stats.completed }}
+
+      <!-- Detail Charts Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <!-- Grade Distribution -->
+        <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
+          <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-6 flex items-center gap-2">
+            <Icon icon="fluent:chart-person-24-regular" class="w-5 h-5" />
+            การกระจายเกรด (Grade Distribution)
+          </h4>
+          <div class="flex items-end justify-between h-40 gap-2 px-2">
+             <div v-for="(count, grade) in gradeDistribution" :key="grade" class="flex-1 flex flex-col items-center justify-end h-full gap-2 group relative">
+                <!-- Tooltip -->
+                 <div class="absolute -top-8 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                    {{ count }} คน
+                 </div>
+                <!-- Bar -->
+                <div class="w-full max-w-[40px] bg-blue-100 dark:bg-blue-900/30 rounded-t-md relative overflow-hidden transition-all duration-500 hover:bg-blue-200 dark:hover:bg-blue-800/50"
+                     :style="{ height: `${Math.max((count / members.length) * 100, 4)}%` }">
+                     <!-- Fill animation could go here -->
+                     <div v-if="count > 0" class="absolute bottom-0 left-0 right-0 bg-blue-500/20 h-full w-full"></div>
+                </div>
+                <!-- Label -->
+                <div class="text-sm font-medium text-gray-600 dark:text-gray-400">{{ grade }}</div>
+             </div>
+          </div>
         </div>
-        <p class="text-sm text-gray-500">เรียนจบแล้ว</p>
+
+        <!-- Top Performers -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col">
+          <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+            <Icon icon="fluent:ribbon-star-24-filled" class="w-5 h-5 text-yellow-500" />
+            Top Performers
+          </h4>
+          <div class="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+             <div v-for="(student, index) in topPerformers" :key="student.id" 
+                  class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
+                  @click="viewMemberDetails(student)">
+                <div class="relative">
+                    <img :src="student.user?.avatar || '/images/default-avatar.png'" class="w-10 h-10 rounded-full object-cover border border-gray-200">
+                    <div v-if="index < 3" class="absolute -top-1 -right-1 w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm border border-white">
+                        {{ index + 1 }}
+                    </div>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ student.user?.name }}</p>
+                    <p class="text-xs text-gray-500 truncate">{{ student.scores?.grade_name || '-' }} • {{ student.overall_progress || 0 }}%</p>
+                </div>
+                <div class="text-sm font-bold text-green-600">{{ student.scores?.total_score || 0 }}</div>
+             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- At Risk Alert -->
+      <div v-if="atRiskStudents.length > 0" class="bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-800/30 rounded-xl p-4 flex items-start gap-4">
+          <div class="p-2 bg-red-100 dark:bg-red-900/30 rounded-full shrink-0">
+              <Icon icon="fluent:alert-24-filled" class="w-6 h-6 text-red-600 dark:text-red-400" />
+          </div>
+          <div class="flex-1">
+              <h4 class="font-bold text-red-700 dark:text-red-400 text-sm">ต้องการความช่วยเหลือ ({{ atRiskStudents.length }} คน)</h4>
+              <p class="text-xs text-red-600/80 dark:text-red-400/80 mt-1 mb-2">นักเรียนกลุ่มนี้มีความคืบหน้าน้อยกว่า 50% หรือคะแนนต่ำกว่าเกณฑ์</p>
+              <div class="flex flex-wrap gap-2">
+                  <div v-for="student in atRiskStudents.slice(0, 5)" :key="student.id" 
+                       class="flex items-center gap-1.5 bg-white dark:bg-gray-800 px-2 py-1 rounded-md border border-red-100 dark:border-red-900/30 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                       @click="viewMemberDetails(student)">
+                      <img :src="student.user?.avatar || '/images/default-avatar.png'" class="w-5 h-5 rounded-full">
+                      <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ student.user?.name }}</span>
+                      <span class="text-xs text-red-500 font-bold">({{ student.overall_progress }}%)</span>
+                  </div>
+                  <div v-if="atRiskStudents.length > 5" class="px-2 py-1 text-xs text-red-600 font-medium">
+                      + อีก {{ atRiskStudents.length - 5 }} คน
+                  </div>
+              </div>
+          </div>
       </div>
     </div>
     

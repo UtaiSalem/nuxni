@@ -100,7 +100,23 @@ class CourseMemberController extends Controller
         $lessonAssignments = $course->courseLessons()->with('assignments')->get()->flatMap->assignments;
         $allAssignments = $courseAssignments->merge($lessonAssignments);
         
-        $assignments = $allAssignments->map(function ($assignment) use ($userId) {
+        // Filter assignments based on status and group
+        $assignments = $allAssignments->filter(function($assignment) use ($member) {
+            // Must be published
+            if ($assignment->status !== 1) return false;
+            
+            // Check group restriction
+            if (!empty($assignment->target_groups)) {
+                // If member has no group, but assignment targets specific groups -> Exclude?
+                // Assuming restriction means "Only these groups". So No Group = Excluded.
+                if (!$member->group_id) return false;
+
+                if (!in_array($member->group_id, $assignment->target_groups)) {
+                    return false;
+                }
+            }
+            return true;
+        })->map(function ($assignment) use ($userId) {
             $answer = \App\Models\AssignmentAnswer::where('assignment_id', $assignment->id)
                 ->where('user_id', $userId)
                 ->first();
@@ -115,12 +131,14 @@ class CourseMemberController extends Controller
                 'submitted_at' => $answer ? $answer->created_at : null,
                 'graded' => $answer && $answer->status === 'graded',
             ];
-        });
+        })->values();
         
         // Get all quizzes with completion status and scores
         $courseQuizzes = $course->courseQuizzes;
         
-        $quizzes = $courseQuizzes->map(function ($quiz) use ($userId, $course) {
+        $quizzes = $courseQuizzes->filter(function($quiz) {
+            return $quiz->is_active;
+        })->map(function ($quiz) use ($userId, $course) {
             $result = \App\Models\CourseQuizResult::where('quiz_id', $quiz->id)
                 ->where('user_id', $userId)
                 ->where('course_id', $course->id)
@@ -143,7 +161,7 @@ class CourseMemberController extends Controller
                 'completed_at' => $result ? $result->created_at : null,
                 'passed' => $result && $quiz->passing_score ? $result->score >= $quiz->passing_score : null,
             ];
-        });
+        })->values();
 
         return response()->json([
             'isCourseAdmin' => $course->user_id === auth()->id(),

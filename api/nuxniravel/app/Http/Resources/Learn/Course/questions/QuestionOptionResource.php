@@ -28,23 +28,10 @@ class QuestionOptionResource extends JsonResource
             'status'            => $this->status,
             'status'            => $this->status,
             'images'            => $this->images->map(function($img) {
-                // Logic adapted from UserResource to ensure correct URL generation
-                $imgUrl = null;
-                if ($img->url) {
-                     // FIX: User requested path correction for Options too
-                    $fixedPath = str_replace('images/courses/lessons/quizzes/options', 'images/courses/quizzes/questions', $img->url);
-
-                    if (filter_var($fixedPath, FILTER_VALIDATE_URL)) {
-                        $imgUrl = $fixedPath;
-                    } else {
-                        $imgUrl = url(\Illuminate\Support\Facades\Storage::url($fixedPath));
-                    }
-                }
-
                 return [
                     'id' => $img->id,
-                    'url' => $imgUrl,
-                    'full_url' => $imgUrl
+                    'url' => $img->url,
+                    'full_url' => $img->full_url
                 ];
             }),
             'created_at'        => $this->created_at,

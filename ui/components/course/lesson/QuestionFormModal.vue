@@ -158,7 +158,7 @@ const onSubmit = async () => {
     return
   }
   
-  if (form.value.options.some(o => !o.text.trim() && !o.image)) {
+  if (form.value.options.some(o => !o.text?.trim() && !o.image)) {
       swal.error('กรุณากรอกตัวเลือกให้ครบถ้วน (ต้องมีข้อความหรือรูปภาพ)')
       return;
   }

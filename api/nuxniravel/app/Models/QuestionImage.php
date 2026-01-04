@@ -25,9 +25,9 @@ class QuestionImage extends Model
              return asset('storage/' . $this->attributes['image_url']);
         }
 
-        $folder = 'images/courses/quizzes/questions';
+        $folder = 'images/courses/lessons/questions';
         if ($this->imageable_type === 'App\Models\QuestionOption' || $this->imageable_type === 'QuestionOption') {
-            $folder = 'images/courses/lessons/quizzes/options';
+            $folder = 'images/courses/lessons/questions/options';
         }
 
         return asset("storage/{$folder}/" . $this->filename);

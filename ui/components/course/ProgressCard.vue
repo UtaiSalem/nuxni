@@ -61,6 +61,14 @@ const formatDate = (date: string) => {
     minute: '2-digit'
   })
 }
+
+// Status Badge
+const statusBadge = computed(() => {
+  const p = overallProgress.value
+  if (p >= 80) return { text: 'ดีเยี่ยม', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800' }
+  if (p >= 50) return { text: 'ปกติ', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800' }
+  return { text: 'ต้องปรับปรุง', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 border-red-200 dark:border-red-800' }
+})
 </script>
 
 <template>
@@ -83,6 +91,12 @@ const formatDate = (date: string) => {
         <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
           @{{ member.user?.username }}
         </p>
+        <!-- Status Badge -->
+        <div class="mt-1">
+          <span :class="['inline-flex items-center px-2 py-0.5 rounded textxs font-medium border', statusBadge.color]">
+            {{ statusBadge.text }}
+          </span>
+        </div>
         <p class="text-xs text-gray-400 mt-1">
           เข้าใช้งานล่าสุด: {{ formatDate(member.last_activity) }}
         </p>

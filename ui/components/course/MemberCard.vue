@@ -4,7 +4,7 @@ import { usePage } from "@inertiajs/vue3";
 import { Icon } from '@iconify/vue';
 
 // ✅ Import composable
-import { useMemberProgress } from '@/composables/useMemberProgress';
+import { useMemberProgress } from '@/composables/useMemberProgress.ts';
 import DotsDropdownMenu from '@/PlearndComponents/accessories/DotsDropdownMenu.vue';
 
 const props = defineProps({
