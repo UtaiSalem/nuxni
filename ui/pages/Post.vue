@@ -2,7 +2,7 @@
 import { ref, reactive, onMounted } from 'vue';
 import MainLayout from '~/layouts/main.vue';
 import SinglePostViewer from '@/components/play/posts/SinglePostViewer.vue';
-import PostSkeleton from '@/components/PostSkeleton.vue';
+import PostSkeleton from '@/components/play/postSkeleton.vue';
 
 const props = defineProps({
     'post_id': Number,

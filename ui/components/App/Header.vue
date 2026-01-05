@@ -20,7 +20,7 @@
       </button>
 
       <!-- Logo -->
-      <NuxtLink to="/newsfeed" class="flex-1 flex justify-center">
+      <NuxtLink to="/play/newsfeed" class="flex-1 flex justify-center">
         <div class="flex items-center gap-2">
           <Icon icon="mdi:account-group" class="w-8 h-8 text-primary-600" />
           <span class="text-xl font-bold text-secondary-900">Pitnik</span>

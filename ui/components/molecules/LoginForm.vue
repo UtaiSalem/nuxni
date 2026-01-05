@@ -90,7 +90,7 @@ const handleSubmit = async () => {
     })
 
     // Redirect to newsfeed after successful login
-    router.push('/newsfeed')
+    router.push('/play/newsfeed')
   } catch (e: any) {
     console.error('Login failed', e)
     error.value = e.message || t('validation.invalidCredentials')

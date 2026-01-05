@@ -4,7 +4,7 @@ import { useForm, Link } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
 import MainLayout from '~/layouts/main.vue';
 import AcademyCoverProfile from '@/components/learn/academy/AcademyCoverProfile.vue';
-import CourseCard from '@/components/course/CourseCard.vue';
+import CourseCard from '@/components/learn/course/CourseCard.vue';
 import AcademyNavbarTab from '@/components/learn/academy/AcademyNavbarTab.vue';
 
 const props = defineProps({

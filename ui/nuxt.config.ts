@@ -59,6 +59,7 @@ export default defineNuxtConfig({
       Inter: [300, 400, 500, 600, 700],
       Prompt: [300, 400, 500, 600, 700],
       Outfit: [300, 400, 500, 600, 700],
+      Audiowide: [400],
     },
     display: 'swap',
     prefetch: true,
@@ -85,14 +86,14 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title: 'Nuxni - Online Learning Community App',
+      title: 'Nuxnan - Online Learning Community App',
       bodyAttrs: {
         class: 'bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-sans',
       },
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'description', content: 'Pitnik Social Network' },
+        { name: 'description', content: 'Nuxnan Social Learning E-commerce' },
         { name: 'format-detection', content: 'telephone=no' },
       ],
       link: [{ rel: 'icon', type: 'image/png', href: '/favicon.png' }],
@@ -103,6 +104,6 @@ export default defineNuxtConfig({
   },
 
   build: {
-    transpile: ['@vuepic/vue-datepicker'], // Force transpile for named export
+    transpile: [], // Force transpile for named export
   },
 })

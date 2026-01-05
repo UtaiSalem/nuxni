@@ -267,7 +267,7 @@ const handleGetDonate = async (donateId: number, idx: number) => {
         >
           <NuxtLink
             v-if="authStore.isAuthenticated"
-            to="/newsfeed"
+            to="/play/newsfeed"
             class="text-md font-semibold text-white md:text-lg bg-gradient-to-r from-blue-500 to-indigo-600 p-4 rounded-xl shadow-lg hover:shadow-2xl hover:scale-105 transform transition-all duration-300 inline-flex items-center gap-2 backdrop-blur-sm"
           >
             <IconWrapper icon="mdi:newspaper-variant-outline" class="w-5 h-5" />

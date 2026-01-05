@@ -3,11 +3,11 @@ import { ref } from 'vue';
 import { Head, usePage, Link } from "@inertiajs/vue3";
 import { Icon } from '@iconify/vue';
 import MainLayout from "~/layouts/main.vue";
-import LessonCoverProfile from '@/components/course/lesson/LessonCoverProfile.vue';
-import AssignmentListViewer from '@/components/course/lesson/LessonAssignmentSection.vue';
-import CreateNewAssignmentCard from '@/components/course/lesson/CreateNewAssignmentCard.vue';
-import QuestionsListViewer from '@/components/course/lesson/LessonQuizSection.vue';
-import LessonImagesViewer from '@/components/course/lesson/LessonImagesViewer.vue';
+import LessonCoverProfile from '@/components/learn/course/lesson/LessonCoverProfile.vue';
+import AssignmentListViewer from '@/components/learn/course/lesson/LessonAssignmentSection.vue';
+import CreateNewAssignmentCard from '@/components/learn/course/lesson/CreateNewAssignmentCard.vue';
+import QuestionsListViewer from '@/components/learn/course/lesson/LessonQuizSection.vue';
+import LessonImagesViewer from '@/components/learn/course/lesson/LessonImagesViewer.vue';
 
 const props = defineProps({
     isCourseAdmin: Boolean,

@@ -158,17 +158,17 @@ const emit = defineEmits<{
 }>()
 
 const menuItems = [
-  { path: '/newsfeed', icon: '/images/svg/home.png', label: 'Home' },
+  { path: '/play/newsfeed', icon: '/images/svg/home.png', label: 'Home' },
   { path: '/timeline', icon: '/images/svg/user.png', label: 'My Profile' },
   { path: '/photos', icon: '/images/svg/photos.png', label: 'Photos' },
   { path: '/videos', icon: '/images/svg/video.png', label: 'Videos' },
-  { path: '/groups', icon: '/images/svg/groups.png', label: 'Groups' },
+  { path: '/play/groups', icon: '/images/svg/groups.png', label: 'Groups' },
   { path: '/pages', icon: '/images/svg/pages.png', label: 'Pages' },
   { path: '/notifications', icon: '/images/svg/about.png', label: 'Notifications' },
-  { path: '/messages', icon: '/images/svg/inbox.png', label: 'Messages' },
+  { path: '/play/messages', icon: '/images/svg/inbox.png', label: 'Messages' },
   { path: '/followers', icon: '/images/svg/users.png', label: 'Followers' },
   { path: '/blogs', icon: '/images/svg/news.png', label: 'Blog Posts' },
-  { path: '/marketplace', icon: '/images/svg/market.png', label: 'Market Place' },
+  { path: '/earn/marketplace', icon: '/images/svg/market.png', label: 'Market Place' },
   { path: '/events', icon: '/images/svg/event.png', label: 'Events' },
   { path: '/nearby', icon: '/images/svg/event.png', label: 'Nearby' },
   { path: '/settings', icon: '/images/svg/setting.png', label: 'Settings' },
@@ -335,17 +335,17 @@ const emit = defineEmits<{
 }>()
 
 const menuItems = [
-  { path: '/newsfeed', icon: '/images/svg/home.png', label: 'Home' },
+  { path: '/play/newsfeed', icon: '/images/svg/home.png', label: 'Home' },
   { path: '/timeline', icon: '/images/svg/user.png', label: 'My Profile' },
   { path: '/photos', icon: '/images/svg/photos.png', label: 'Photos' },
   { path: '/videos', icon: '/images/svg/video.png', label: 'Videos' },
-  { path: '/groups', icon: '/images/svg/groups.png', label: 'Groups' },
+  { path: '/play/groups', icon: '/images/svg/groups.png', label: 'Groups' },
   { path: '/pages', icon: '/images/svg/pages.png', label: 'Pages' },
   { path: '/notifications', icon: '/images/svg/about.png', label: 'Notifications' },
-  { path: '/messages', icon: '/images/svg/inbox.png', label: 'Messages' },
+  { path: '/play/messages', icon: '/images/svg/inbox.png', label: 'Messages' },
   { path: '/followers', icon: '/images/svg/users.png', label: 'Followers' },
   { path: '/blogs', icon: '/images/svg/news.png', label: 'Blog Posts' },
-  { path: '/marketplace', icon: '/images/svg/market.png', label: 'Market Place' },
+  { path: '/earn/marketplace', icon: '/images/svg/market.png', label: 'Market Place' },
   { path: '/events', icon: '/images/svg/event.png', label: 'Events' },
   { path: '/nearby', icon: '/images/svg/event.png', label: 'Nearby' },
   { path: '/settings', icon: '/images/svg/setting.png', label: 'Settings' },

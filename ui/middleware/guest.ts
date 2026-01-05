@@ -3,6 +3,6 @@ export default defineNuxtRouteMiddleware((to, from) => {
 
   // If user is already authenticated, redirect to newsfeed
   if (authStore.isAuthenticated) {
-    return navigateTo('/newsfeed')
+    return navigateTo('/play/newsfeed')
   }
 })

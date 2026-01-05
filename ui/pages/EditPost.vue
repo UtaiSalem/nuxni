@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import MainLayout from '~/layouts/main.vue';
-import PostSkeleton from '@/components/PostSkeleton.vue';
+import PostSkeleton from '@/components/play/postSkeleton.vue';
 import EditPostForm from '@/components/widgets/EditPostForm.vue';
 
 const props = defineProps({

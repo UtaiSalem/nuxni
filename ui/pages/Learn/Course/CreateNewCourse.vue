@@ -6,8 +6,9 @@ import { router } from '@inertiajs/vue3';
 
 import CoursesLayout from '@/layouts/CoursesLayout.vue';
 
-import VueDatePicker from '@vuepic/vue-datepicker';
-import '@vuepic/vue-datepicker/dist/main.css';
+// VueDatePicker is imported as a global plugin
+// import VueDatePicker from '@vuepic/vue-datepicker';
+// import '@vuepic/vue-datepicker/dist/main.css';
 
 const headerTitle = ref('สร้างรายวิชาใหม่');
 

@@ -3,7 +3,7 @@ import { ref} from 'vue';
 import { router } from '@inertiajs/vue3';
 
 import CoursesLayout from '@/layouts/CoursesLayout.vue';
-import CourseCard from '@/components/course/CourseCard.vue';
+import CourseCard from '@/components/learn/course/CourseCard.vue';
 import InfiniteLoading from "v3-infinite-loading";
 import CoursesLoadingSkeleton from '@/components/accessories/CoursesLoadingSkeleton.vue'
 import LoadingPage from '@/components/accessories/LoadingPage.vue';

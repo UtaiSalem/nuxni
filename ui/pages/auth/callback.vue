@@ -69,7 +69,7 @@ onMounted(async () => {
     await new Promise(resolve => setTimeout(resolve, 100))
     
     // Redirect to newsfeed
-    await router.push('/newsfeed')
+    await router.push('/play/newsfeed')
     
   } catch (err: any) {
     console.error('OAuth callback error:', err)

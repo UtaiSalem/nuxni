@@ -399,7 +399,7 @@ const handleSubmit = async () => {
 
     // Redirect to newsfeed after successful registration
     setTimeout(() => {
-      router.push('/newsfeed')
+      router.push('/play/newsfeed')
     }, 1500)
   } catch (e: any) {
     console.error('Registration failed', e)

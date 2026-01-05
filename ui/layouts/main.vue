@@ -54,9 +54,9 @@ const authUser = computed(() => {
 
 // Navigation
 const navigation = [
-  { name: 'กระดานข่าว', href: '/newsfeed', icon: 'fluent:feed-24-regular' },
-  { name: 'รายวิชา', href: '/courses', icon: 'fluent-mdl2:publish-course' },
-  { name: 'สะสมแต้ม', href: '/donates', icon: 'mdi:hand-coin-outline' },
+  { name: 'กระดานข่าว', href: '/play/newsfeed', icon: 'fluent:feed-24-regular' },
+  { name: 'รายวิชา', href: '/learn/courses', icon: 'fluent-mdl2:publish-course' },
+  { name: 'สะสมแต้ม', href: '/earn/donates', icon: 'mdi:hand-coin-outline' },
   { name: 'ดูสินค้า', href: '/supports', icon: 'eos-icons:product-subscriptions-outlined' },
 ]
 
@@ -245,7 +245,7 @@ const handleTestChangePoints = () => {
         <div class="flex items-center gap-3">
           <!-- Points -->
           <NuxtLink
-            to="/donates"
+            to="/earn/donates"
             class="hidden sm:flex items-center gap-1 px-3 py-1 rounded-lg transition-colors"
             :class="
               isDarkMode
@@ -501,10 +501,10 @@ const handleTestChangePoints = () => {
           <!-- Navigation Menu -->
           <div class="space-y-1">
             <NuxtLink
-              to="/newsfeed"
+              to="/play/newsfeed"
               class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300"
               :class="
-                route.path === '/newsfeed'
+                route.path === '/play/newsfeed'
                   ? 'bg-gradient-vikinger text-white shadow-vikinger'
                   : isDarkMode
                   ? 'text-gray-300 hover:bg-vikinger-purple/10 hover:text-vikinger-cyan'
@@ -529,10 +529,10 @@ const handleTestChangePoints = () => {
               <span class="font-semibold">Overview</span>
             </NuxtLink>
             <NuxtLink
-              to="/groups"
+              to="/play/groups"
               class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300"
               :class="
-                route.path === '/groups'
+                route.path === '/play/groups'
                   ? 'bg-gradient-vikinger text-white shadow-vikinger'
                   : isDarkMode
                   ? 'text-gray-300 hover:bg-vikinger-purple/10 hover:text-vikinger-cyan'
@@ -585,10 +585,10 @@ const handleTestChangePoints = () => {
               <span class="font-semibold">Quests</span>
             </NuxtLink>
             <NuxtLink
-              to="/streams"
+              to="/play/streams"
               class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300"
               :class="
-                route.path === '/streams'
+                route.path === '/play/streams'
                   ? 'bg-gradient-vikinger text-white shadow-vikinger'
                   : isDarkMode
                   ? 'text-gray-300 hover:bg-vikinger-purple/10 hover:text-vikinger-cyan'
@@ -628,10 +628,10 @@ const handleTestChangePoints = () => {
 
           <!-- Navigation Icons (Collapsed) -->
           <NuxtLink
-            to="/newsfeed"
+            to="/play/newsfeed"
             class="w-12 h-12 flex items-center justify-center rounded-lg transition-all duration-300"
             :class="
-              route.path === '/newsfeed'
+              route.path === '/play/newsfeed'
                 ? 'bg-gradient-vikinger text-white shadow-vikinger'
                 : isDarkMode
                 ? 'text-gray-300 hover:bg-vikinger-purple/10 hover:text-vikinger-cyan'
@@ -656,10 +656,10 @@ const handleTestChangePoints = () => {
             <Icon icon="fluent:data-histogram-24-regular" class="w-6 h-6" />
           </NuxtLink>
           <NuxtLink
-            to="/groups"
+            to="/play/groups"
             class="w-12 h-12 flex items-center justify-center rounded-lg transition-all duration-300"
             :class="
-              route.path === '/groups'
+              route.path === '/play/groups'
                 ? 'bg-gradient-vikinger text-white shadow-vikinger'
                 : isDarkMode
                 ? 'text-gray-300 hover:bg-vikinger-purple/10 hover:text-vikinger-cyan'
@@ -712,10 +712,10 @@ const handleTestChangePoints = () => {
             <Icon icon="fluent:star-24-regular" class="w-6 h-6" />
           </NuxtLink>
           <NuxtLink
-            to="/streams"
+            to="/play/streams"
             class="w-12 h-12 flex items-center justify-center rounded-lg transition-all duration-300"
             :class="
-              route.path === '/streams'
+              route.path === '/play/streams'
                 ? 'bg-gradient-vikinger text-white shadow-vikinger'
                 : isDarkMode
                 ? 'text-gray-300 hover:bg-vikinger-purple/10 hover:text-vikinger-cyan'

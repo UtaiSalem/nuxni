@@ -54,7 +54,7 @@
           </NuxtLink>
         </div>
         <div class="link-item">
-          <NuxtLink to="/groups" title="">
+          <NuxtLink to="/play/groups" title="">
             <i class="lni lni-network"></i>
             <p>Groups</p>
           </NuxtLink>

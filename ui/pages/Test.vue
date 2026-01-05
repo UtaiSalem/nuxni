@@ -5,7 +5,7 @@
                 <div class=" max-w-6xl ">
                     <div class="bg-white shadow-lg rounded-lg m-6 p-6 space-y-4">
                         <div class="card-header underline">
-                            <Link href="/newsfeed">Laravel Vue JS File Upload Demo</Link>
+                            <Link href="/play/newsfeed">Laravel Vue JS File Upload Demo</Link>
                         </div>
                         <div class="card-body">
                             <div v-if="form.success != ''" class="alert alert-success">

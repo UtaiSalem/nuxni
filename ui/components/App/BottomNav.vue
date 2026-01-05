@@ -3,9 +3,9 @@
     <div class="flex items-center justify-around px-4 py-3">
       <!-- Home -->
       <NuxtLink
-        to="/newsfeed"
+        to="/play/newsfeed"
         class="flex flex-col items-center gap-1 p-2 hover:bg-gray-50 rounded-lg transition-colors"
-        :class="{ 'text-primary-600': isActive('/newsfeed') }"
+        :class="{ 'text-primary-600': isActive('/play/newsfeed') }"
       >
         <Icon icon="mdi:home" class="w-6 h-6" />
       </NuxtLink>
@@ -48,9 +48,9 @@
 
       <!-- Messages -->
       <NuxtLink
-        to="/messages"
+        to="/play/messages"
         class="flex flex-col items-center gap-1 p-2 hover:bg-gray-50 rounded-lg transition-colors"
-        :class="{ 'text-primary-600': isActive('/messages') }"
+        :class="{ 'text-primary-600': isActive('/play/messages') }"
       >
         <Icon icon="mdi:message" class="w-6 h-6" />
       </NuxtLink>

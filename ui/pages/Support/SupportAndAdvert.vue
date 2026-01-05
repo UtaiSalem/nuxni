@@ -5,8 +5,9 @@ import { useObjectUrl } from '@vueuse/core'
 import { Link, router, usePage } from '@inertiajs/vue3';
 import MainLayout from '~/layouts/main.vue';
 import Swal from 'sweetalert2';
-import VueDatePicker from '@vuepic/vue-datepicker';
-import '@vuepic/vue-datepicker/dist/main.css';
+// VueDatePicker is imported as a global plugin
+// import VueDatePicker from '@vuepic/vue-datepicker';
+// import '@vuepic/vue-datepicker/dist/main.css';
 
 const props = defineProps({
     Supporter: Object,

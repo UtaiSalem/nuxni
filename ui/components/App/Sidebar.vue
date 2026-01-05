@@ -44,17 +44,17 @@ const route = useRoute()
 const isOpen = ref(false)
 
 const menuItems = [
-  { path: '/newsfeed', icon: 'mdi:home', label: 'Home' },
+  { path: '/play/newsfeed', icon: 'mdi:home', label: 'Home' },
   { path: '/about', icon: 'mdi:account', label: 'My Profile' },
   { path: '/photos', icon: 'mdi:image-multiple', label: 'Photos' },
   { path: '/videos', icon: 'mdi:video', label: 'Videos' },
-  { path: '/groups', icon: 'mdi:account-group', label: 'Groups' },
+  { path: '/play/groups', icon: 'mdi:account-group', label: 'Groups' },
   { path: '/fav-page', icon: 'mdi:file-document', label: 'Pages' },
   { path: '/notifications', icon: 'mdi:bell', label: 'Notifications' },
-  { path: '/messages', icon: 'mdi:message', label: 'Messages' },
+  { path: '/play/messages', icon: 'mdi:message', label: 'Messages' },
   { path: '/followers', icon: 'mdi:account-multiple', label: 'Followers' },
   { path: '/blogs', icon: 'mdi:post', label: 'Blog Posts' },
-  { path: '/marketplace', icon: 'mdi:store', label: 'Market Place' },
+  { path: '/earn/marketplace', icon: 'mdi:store', label: 'Market Place' },
   { path: '/events', icon: 'mdi:calendar', label: 'Events' },
   { path: '/nearby', icon: 'mdi:map-marker', label: 'Nearby' },
   { path: '/settings', icon: 'mdi:cog', label: 'Settings' },

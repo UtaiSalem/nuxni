@@ -32,9 +32,9 @@
 
       <!-- Title with gradient text -->
       <div class="space-y-2">
-        <h1 class="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight">
+        <h1 class="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight font-audiowide">
           <span class="bg-clip-text text-transparent bg-gradient-to-r from-white via-vikinger-cyan to-vikinger-purple animate-gradient-x">
-            NUXNI
+            NUXNAN
           </span>
         </h1>
         <p class="text-gray-300 max-w-md mx-auto lg:mx-0 text-base lg:text-lg font-medium leading-relaxed">
@@ -59,13 +59,13 @@
       </div>
 
       <!-- Switch Buttons -->
-      <div class="flex space-x-0 bg-white/10 backdrop-blur-md rounded-xl p-1 border border-white/20 shadow-xl">
+      <div class="flex gap-2 bg-white/10 backdrop-blur-md rounded-xl p-2 border border-white/20 shadow-xl">
         <button
           @click="setTab('login')"
-          class="px-6 sm:px-10 py-2.5 rounded-lg font-bold transition-all duration-300 text-sm"
+          class="flex-1 px-6 sm:px-10 py-2.5 rounded-lg font-bold transition-all duration-300 text-sm"
           :class="
             activeTab === 'login'
-              ? 'bg-gradient-to-r from-vikinger-purple to-vikinger-blue text-white shadow-lg scale-105'
+              ? 'bg-gradient-to-r from-vikinger-purple to-vikinger-blue text-white shadow-lg scale-100'
               : 'text-white/80 hover:bg-white/10 hover:text-white'
           "
         >
@@ -73,10 +73,10 @@
         </button>
         <button
           @click="setTab('register')"
-          class="px-6 sm:px-10 py-2.5 rounded-lg font-bold transition-all duration-300 text-sm"
+          class="flex-1 px-6 sm:px-10 py-2.5 rounded-lg font-bold transition-all duration-300 text-sm"
           :class="
             activeTab === 'register'
-              ? 'bg-gradient-to-r from-vikinger-cyan to-vikinger-purple text-white shadow-lg scale-105'
+              ? 'bg-gradient-to-r from-vikinger-cyan to-vikinger-purple text-white shadow-lg scale-100'
               : 'text-white/80 hover:bg-white/10 hover:text-white'
           "
         >
@@ -127,7 +127,10 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
-const activeTab = computed(() => (route.query.tab as string) || 'login')
+const activeTab = computed(() => {
+  const tab = route.query.tab as string
+  return ['login', 'register'].includes(tab) ? (tab as 'login' | 'register') : 'login'
+})
 
 const setTab = (tab: 'login' | 'register') => {
   router.push({ query: { ...route.query, tab } })

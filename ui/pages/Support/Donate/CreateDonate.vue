@@ -5,8 +5,9 @@
     import { useObjectUrl } from "@vueuse/core";
     // import MainLayout from "@/Layouts/MainLayout.vue";
     import Swal from "sweetalert2";
-    import VueDatePicker from "@vuepic/vue-datepicker";
-    import "@vuepic/vue-datepicker/dist/main.css";
+// VueDatePicker is imported as a global plugin
+// import VueDatePicker from "@vuepic/vue-datepicker";
+// import "@vuepic/vue-datepicker/dist/main.css";
     const isDarkMode = ref(false);
     const isLoading = ref(false);
     const totalMoneySupport = ref(10);
@@ -170,7 +171,7 @@
                 </div>
                 <div class="flex">
                     <Link href="/" class="text-xl font-bold text-white mx-2 underline flex items-center"><Icon icon="heroicons-solid:home" />Home</Link>
-                    <Link href="/newsfeed" class="text-xl font-bold text-white mx-2 underline flex items-center"><Icon icon="heroicons:newspaper-solid" />กระดานข่าว</Link>
+                    <Link href="/play/newsfeed" class="text-xl font-bold text-white mx-2 underline flex items-center"><Icon icon="heroicons:newspaper-solid" />กระดานข่าว</Link>
                 </div>
             </div>
         </div>

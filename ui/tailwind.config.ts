@@ -82,6 +82,7 @@ export default {
       fontFamily: {
         sans: ['Prompt', 'Inter', 'sans-serif'],
         heading: ['Outfit', 'sans-serif'],
+        audiowide: ['Audiowide', 'sans-serif'],
         prompt: ['Prompt', 'sans-serif'],
       },
       backgroundImage: {

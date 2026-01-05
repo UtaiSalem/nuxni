@@ -13,7 +13,7 @@ useHead({
 })
 
 // onMounted(() => {
-//     window.location.href = '/newsfeed';
+//     window.location.href = '/play/newsfeed';
 // });
 </script>
 
@@ -24,7 +24,7 @@ useHead({
 
       <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg p-6">
         <!-- <Welcome /> -->
-        <!-- <a href="/newsfeed">Newsfeed</a> -->
+        <!-- <a href="/play/newsfeed">Newsfeed</a> -->
         <p class="text-gray-600 dark:text-gray-400">Welcome to your dashboard!</p>
       </div>
     </div>

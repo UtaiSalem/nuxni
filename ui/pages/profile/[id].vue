@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
 import BaseCard from '~/components/atoms/BaseCard.vue'
-import FeedPost from '~/components/feed/FeedPost.vue'
+import FeedPost from '~/components/play/feed/FeedPost.vue'
 import ProfileCompletionWidget from '~/components/organisms/ProfileCompletionWidget.vue'
-import CreatePostBox from '~/components/feed/CreatePostBox.vue'
+import CreatePostBox from '~/components/play/feed/CreatePostBox.vue'
 import type { UserProfile, FriendshipStatus } from '~/composables/useProfile'
 
 definePageMeta({
@@ -1031,7 +1031,7 @@ const socialIcons: Record<string, { icon: string; color: string }> = {
     <BaseCard v-else class="bg-gray-800 border-gray-700 text-center py-12">
       <Icon icon="fluent:person-warning-24-regular" class="w-16 h-16 text-gray-600 mx-auto mb-4" />
       <p class="text-gray-400">Profile not found</p>
-      <NuxtLink to="/newsfeed" class="mt-4 inline-block text-vikinger-purple hover:underline">
+      <NuxtLink to="/play/newsfeed" class="mt-4 inline-block text-vikinger-purple hover:underline">
         Go back to newsfeed
       </NuxtLink>
     </BaseCard>

@@ -6,9 +6,9 @@
       <!-- Left Menu -->
       <div class="flex items-center space-x-6">
         <NuxtLink
-          to="/newsfeed"
+          to="/play/newsfeed"
           class="relative p-2 hover:bg-secondary-100 rounded-full transition-colors duration-200"
-          :class="{ 'text-primary-600': isActive('/newsfeed') }"
+          :class="{ 'text-primary-600': isActive('/play/newsfeed') }"
         >
           <Icon icon="mdi:home" class="w-6 h-6" />
         </NuxtLink>
@@ -43,9 +43,9 @@
       <!-- Right Menu -->
       <div class="flex items-center space-x-6">
         <NuxtLink
-          to="/messages"
+          to="/play/messages"
           class="relative p-2 hover:bg-secondary-100 rounded-full transition-colors duration-200"
-          :class="{ 'text-primary-600': isActive('/messages') }"
+          :class="{ 'text-primary-600': isActive('/play/messages') }"
         >
           <Icon icon="mdi:message" class="w-6 h-6" />
         </NuxtLink>

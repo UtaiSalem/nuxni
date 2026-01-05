@@ -140,7 +140,7 @@ const getStatusColor = (status) => {
           ></span>
         </div>
       </div>
-      <NuxtLink to="/friends" class="block text-center text-xs text-vikinger-purple hover:text-vikinger-cyan mt-3 transition-colors">
+      <NuxtLink to="/play/friends" class="block text-center text-xs text-vikinger-purple hover:text-vikinger-cyan mt-3 transition-colors">
         View All Friends →
       </NuxtLink>
     </div>

@@ -1,8 +1,8 @@
 <script setup>
 import { computed, ref } from 'vue';
 import CourseLayout from '@/Layouts/CourseLayout.vue';
-import MemberAssignmentsAnswersDetails from '@/components/course/assignments/MemberAssignmentsAnswersDetails.vue';
-import MemberQuizzesDetails from '@/components/course/progress/MemberQuizzesDetails.vue';
+import MemberAssignmentsAnswersDetails from '@/components/learn/course/assignments/MemberAssignmentsAnswersDetails.vue';
+import MemberQuizzesDetails from '@/components/learn/course/progress/MemberQuizzesDetails.vue';
 
 const props = defineProps({
     isCourseAdmin: Boolean,

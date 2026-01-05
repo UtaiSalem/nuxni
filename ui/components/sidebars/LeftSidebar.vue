@@ -35,13 +35,13 @@ const extraBadges = ref(9)
 
 // Navigation menu items - ตรงตาม Vikinger
 const menuItems = [
-  { name: 'Newsfeed', href: '/newsfeed', icon: 'mdi:message-outline' },
+  { name: 'Newsfeed', href: '/play/newsfeed', icon: 'mdi:message-outline' },
   { name: 'Overview', href: '/overview', icon: 'mdi:chart-bar' },
-  { name: 'Groups', href: '/groups', icon: 'mdi:account-group-outline' },
+  { name: 'Groups', href: '/play/groups', icon: 'mdi:account-group-outline' },
   { name: 'Members', href: '/members', icon: 'mdi:account-outline' },
   { name: 'Badges', href: '/badges', icon: 'mdi:medal-outline' },
   { name: 'Quests', href: '/quests', icon: 'mdi:star-outline' },
-  { name: 'Streams', href: '/streams', icon: 'mdi:play-box-outline' },
+  { name: 'Streams', href: '/play/streams', icon: 'mdi:play-box-outline' },
   { name: 'Events', href: '/events', icon: 'mdi:calendar-outline' },
 ]
 

@@ -46,7 +46,7 @@ onMounted(() => {
     <div class="flex items-center justify-between mb-4">
       <h3 class="font-semibold text-gray-900 dark:text-white">สะสมแต้ม</h3>
       <NuxtLink 
-        to="/donates" 
+        to="/earn/donates" 
         class="text-xs text-vikinger-purple hover:text-vikinger-purple/80 transition-colors"
       >
         ดูทั้งหมด

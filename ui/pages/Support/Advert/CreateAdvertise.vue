@@ -1,7 +1,7 @@
 <script setup>
 
 import MainLayout from '~/layouts/main.vue';
-import '@vuepic/vue-datepicker/dist/main.css';
+// import '@vuepic/vue-datepicker/dist/main.css';
 import { Link } from '@inertiajs/vue3'
 import { Icon } from '@iconify/vue';
 import CreateAdvert from '@/components/earn/advertise/CreateAdvert.vue';
@@ -26,7 +26,7 @@ const props = defineProps({
                     </div>
                     <div class="flex">
                         <Link href="/" class="text-xl font-bold text-white mx-2 underline flex items-center"><Icon icon="heroicons-solid:home" />Home</Link>
-                        <Link href="/newsfeed" class="text-xl font-bold text-white mx-2 underline flex items-center"><Icon icon="heroicons:newspaper-solid" />กระดานข่าว</Link>
+                        <Link href="/play/newsfeed" class="text-xl font-bold text-white mx-2 underline flex items-center"><Icon icon="heroicons:newspaper-solid" />กระดานข่าว</Link>
                     </div>
                 </div>
 

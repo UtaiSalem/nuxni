@@ -6,7 +6,7 @@ function createRouteHelper(getCurrentPath: () => string) {
     // Minimal mapping for the most common legacy Jetstream routes.
     const map: Record<string, string> = {
       welcome: '/',
-      newsfeed: '/newsfeed',
+      newsfeed: '/play/newsfeed',
       dashboard: '/dashboard',
       'profile.show': '/profile',
       logout: '/logout',

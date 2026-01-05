@@ -7,7 +7,7 @@ const menuItems = [
   { 
     id: 'newsfeed', 
     label: 'Newsfeed', 
-    href: '/newsfeed', 
+    href: '/play/newsfeed', 
     icon: 'fluent:news-24-regular' 
   },
   { 
@@ -19,7 +19,7 @@ const menuItems = [
   { 
     id: 'courses', 
     label: 'Courses', 
-    href: '/courses', 
+    href: '/learn/courses', 
     icon: 'fluent:book-24-regular' 
   },
   { 
@@ -37,7 +37,7 @@ const menuItems = [
   { 
     id: 'groups', 
     label: 'Groups', 
-    href: '/groups', 
+    href: '/play/groups', 
     icon: 'fluent:people-community-24-regular' 
   },
 ]

@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue';
 import CourseLayout from '@/Layouts/CourseLayout.vue';
 import StaggeredFade from '@/components/accessories/StaggeredFade.vue';
-import GroupedMemberList from '@/components/course/members/GroupedMemberList.vue';
+import GroupedMemberList from '@/components/learn/course/members/GroupedMemberList.vue';
 const props = defineProps({
     course: Object,
     members: Object, 

@@ -4,7 +4,7 @@ import { usePage, router } from '@inertiajs/vue3';
 import { Icon } from '@iconify/vue';
 
 import CoursesLayout from '@/layouts/CoursesLayout.vue';
-import CourseCard from '@/components/course/CourseCard.vue';
+import CourseCard from '@/components/learn/course/CourseCard.vue';
 import InfiniteLoading from "v3-infinite-loading";
 import CoursesLoading from '@/components/accessories/CoursesLoadingSkeleton.vue'
 
