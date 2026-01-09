@@ -44,6 +44,7 @@ const isCourseAdmin = computed(() => props.isCourseAdmin || injectedIsCourseAdmi
 const api = useApi()
 const isEnrolling = ref(false)
 const isWishlisted = ref(false)
+const isTogglingFavorite = ref(false)
 const expandedSections = ref<number[]>([0])
 
 // Description editing state
@@ -148,9 +149,33 @@ const enrollCourse = async () => {
 }
 
 // Toggle wishlist
-const toggleWishlist = () => {
-  isWishlisted.value = !isWishlisted.value
+const toggleWishlist = async () => {
+  if (!course.value || isTogglingFavorite.value) return
+  
+  isTogglingFavorite.value = true
+  try {
+    const response = await api.post(`/api/courses/${course.value.id}/favorite`) as { 
+      success: boolean
+      is_favorited?: boolean
+      message?: string 
+    }
+    
+    if (response.success) {
+      isWishlisted.value = response.is_favorited ?? !isWishlisted.value
+    }
+  } catch (err: any) {
+    console.error('Failed to toggle favorite:', err)
+  } finally {
+    isTogglingFavorite.value = false
+  }
 }
+
+// Initialize wishlist state from course data
+watch(() => course.value?.is_favorited, (newVal) => {
+  if (newVal !== undefined) {
+    isWishlisted.value = newVal
+  }
+}, { immediate: true })
 
 // Helper functions
 const getCoverUrl = (coverPath: string | null) => {
@@ -316,6 +341,13 @@ const formatPrice = (price: number) => {
             </div>
           </div>
         </div>
+
+        <!-- Reviews Section -->
+        <LearnCourseRatingCourseReviewsSection
+          v-if="course"
+          :course-id="course.id"
+          :is-member="course.isMember"
+        />
       </div>
 
       <!-- Right Column - Course Info Card -->
@@ -364,14 +396,16 @@ const formatPrice = (price: number) => {
             </NuxtLink>
             <button 
               @click="toggleWishlist"
+              :disabled="isTogglingFavorite"
               :class="[
-                'w-full py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors',
+                'w-full py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50',
                 isWishlisted 
                   ? 'bg-red-500 text-white' 
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
               ]"
             >
-              <Icon :icon="isWishlisted ? 'fluent:heart-24-filled' : 'fluent:heart-24-regular'" class="w-5 h-5" />
+              <Icon v-if="isTogglingFavorite" icon="svg-spinners:ring-resize" class="w-5 h-5" />
+              <Icon v-else :icon="isWishlisted ? 'fluent:heart-24-filled' : 'fluent:heart-24-regular'" class="w-5 h-5" />
               {{ isWishlisted ? 'เพิ่มในรายการโปรดแล้ว' : 'เพิ่มในรายการโปรด' }}
             </button>
           </div>

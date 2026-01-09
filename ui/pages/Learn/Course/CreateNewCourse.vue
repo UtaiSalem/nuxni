@@ -6,24 +6,55 @@ import { router } from '@inertiajs/vue3';
 
 import CoursesLayout from '@/layouts/CoursesLayout.vue';
 
-// VueDatePicker is imported as a global plugin
-// import VueDatePicker from '@vuepic/vue-datepicker';
-// import '@vuepic/vue-datepicker/dist/main.css';
+// VueDatePicker is imported as a global plugin (Backup: local import)
+import { VueDatePicker } from '@vuepic/vue-datepicker';
+import '@vuepic/vue-datepicker/dist/main.css';
 
 const headerTitle = ref('สร้างรายวิชาใหม่');
 
-import InputLabel from '@/components/InputLabel.vue'
-import TextInput from '@/components/TextInput.vue';
-import Textarea from 'primevue/textarea';
+// Imports cleaned up
+// import InputLabel from '@/components/InputLabel.vue'
+// import TextInput from '@/components/TextInput.vue';
 
 
-const tempCover = ref('/storage/images/courses/covers/default_cover.jpg');
+const config = useRuntimeConfig();
+const tempCover = ref(`${config.public.apiBase}/storage/images/courses/covers/default_cover.jpg`);
 const coverInput = ref(null);
 const isOpenCategoryOptions = ref(false);
 const isOpenLevelOptions = ref(false);
 const crsStartDate = ref(new Date());
 const crsEndDate = ref(new Date());
 const courseRange = ref([crsStartDate.value,crsEndDate.value]);
+
+// Calculate Academic Year and Semester
+const currentDate = new Date();
+const currentMonth = currentDate.getMonth() + 1; // 1-12
+const currentYear = currentDate.getFullYear() + 543; // Thai Year (BE)
+// Or should we use AD? The user didn't specify, but "2567" is BE. So I'll use BE.
+// User example: "2567". 2024 = 2567. 2026 = 2569.
+// Logic:
+let initialSemester = '1';
+let initialAcademicYear = currentYear;
+
+if (currentMonth >= 5 && currentMonth <= 9) {
+    // May to September: Semester 1, Year = Current
+    initialSemester = '1';
+    initialAcademicYear = currentYear;
+} else if (currentMonth >= 10 && currentMonth <= 12) {
+    // Oct to Dec: Semester 2, Year = Current
+    initialSemester = '2';
+    initialAcademicYear = currentYear;
+} else if (currentMonth >= 1 && currentMonth <= 3) {
+    // Jan to Mar: Semester 2, Year = Current - 1 (Academic Year continues)
+    initialSemester = '2';
+    initialAcademicYear = currentYear - 1; // Wait, currentYear is already +543 based on NOW. 
+    // If NOW is Jan 2569 (2026), Academic Year is 2568 (2025). Correct.
+} else {
+   // April (Summer)
+   initialSemester = 'summer';
+   initialAcademicYear = currentYear - 1; // Summer is usually the end of the academic year
+}
+
 
 const defaultFormValue = ref({
   academy_id: '',
@@ -42,11 +73,10 @@ const defaultFormValue = ref({
   price: 0,
   discount: 0,
   discount_type: 'fixed',
-  semester: '',
-  academic_year: '',
+  semester: initialSemester,
+  academic_year: initialAcademicYear.toString(),
   status: true,
-  cover: '',
-  // cover: tempCover.value === '/storage/images/courses/covers/default_cover.jpg' ? null : tempCover.value,
+  cover: tempCover.value === `${config.public.apiBase}/storage/images/courses/covers/default_cover.jpg` ? null : tempCover.value,
 });
 
 // generate fake form value to test purpose
@@ -67,8 +97,8 @@ const form = ref({
   price: 0,
   discount: 0,
   discount_type: 'fixed',
-  semester: '',
-  academic_year: '',
+  semester: initialSemester,
+  academic_year: initialAcademicYear.toString(),
   status: true,
   cover: '',
 });
@@ -210,351 +240,348 @@ async function handleSubmitForm(){
 <template>
   <CoursesLayout coursePageTitle="สร้างรายวิชาใหม่">
     <template #coursesMainContent>
-      <div class="section-header my-4 pb-4 bg-white rounded-xl shadow-lg">
-        <div class="flex items-center justify-between w-full border-b-4 border-blue-500 px-4 py-2">
-          <h3 class="text-2xl">{{ headerTitle }}</h3>
+       <div class="max-w-7xl mx-auto pb-12">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 dark:text-white mb-2">{{ headerTitle }}</h1>
+            <p class="text-gray-500 dark:text-gray-400">กรอกข้อมูลเพื่อสร้างรายวิชาใหม่สำหรับชุมชนแห่งการเรียนรู้</p>
         </div>
-        <div class="m-4">
-          <form @submit.prevent="handleSubmitForm" class="mt-2 space-y-2" id="create-new-course-form">
-            <div class="bg-white rounded-t-lg shadow-xl mb-3">
-              <div class="relative w-full h-[256px]">
-                <img :src="tempCover" class="w-full h-full rounded-tl-lg rounded-tr-lg" />
-                <div class="absolute top-2 right-2 flex flex-col">
-                  <input type="file" class="hidden" accept="image/*" ref="coverInput" @change="onCoverInputChange" />
-                  <button type="button" @click.prevent="browseCover"
-                    class="text-white hover:bg-white hover:bg-opacity-50 hover:text-gray-600 transition duration-200 rounded-full p-2">
-                    <Icon icon="heroicons:camera" class="w-6 h-6" />
-                  </button>
-                </div>
-              </div>
-            </div>
-            <h3 class="text-lg font-semibold text-gray-600 dark:text-white py-2">
-              ผู้สอน
-            </h3>
-            <div class="max-w-sm space-y-2 sm:flex items-center sm:space-y-0 sm:space-x-2">
-              <img class="block mx-auto h-14 rounded-full sm:mx-0 sm:shrink-0"
-                :src="$page.props.auth.user.profile_photo_url" :alt="$page.props.auth.user.name">
-              <div class="text-center space-y-2 sm:text-left">
-                <div class="space-y-0.5">
-                  <p class="text-xl text-black/80 font-semibold">
-                    {{ $page.props.auth.user.name }}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div class="grid grid-cols-1 gap-4 my-2">
-              <h3 class="text-lg font-semibold text-gray-600 dark:text-white ">
-                รหัสวิชา
-              </h3>
-              <TextInput id="course_code_input_form" type="text" class="w-full text-start -mt-3 " v-model="form.code" />
-            </div>
-            <div class="grid grid-cols-1 gap-4 my-2">
-              <h3 class="text-lg font-semibold text-gray-600 dark:text-white ">
-                ชื่อวิชา
-              </h3>
-              <textarea id="course_name_input_form" v-model="form.name" rows="1"
-                class="-mt-2 w-full items-center py-4 text-sm text-gray-800 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                placeholder="ชื่อรายวิชา" required></textarea>
-            </div>
-            <div class="grid grid-cols-1 gap-4 my-2">
-              <InputLabel for="course_description_input_form" value="คำอธิบายรายวิชา" />
-              <Textarea id="course_description_input_form" v-model="form.description" rows="8" autoResize
-                class="block p-2.5 -mt-2 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                placeholder="คำอธิบายรายวิชา"></Textarea>
 
-            </div>
+        <form @submit.prevent="handleSubmitForm" class="grid grid-cols-1 lg:grid-cols-12 gap-8" id="create-new-course-form">
+            
+            <!-- LEFT COLUMN: Identity & Preview -->
+            <div class="lg:col-span-4 space-y-6">
+                <!-- Cover Image Preview Card -->
+                <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">รูปภาพปกรายวิชา</label>
+                    
+                    <div class="group relative aspect-video w-full rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-900 border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-violet-500 dark:hover:border-violet-500 transition-colors cursor-pointer"
+                         @click="browseCover">
+                        
+                        <!-- Image -->
+                        <img v-if="tempCover" :src="tempCover" class="w-full h-full object-cover" />
+                        
+                        <!-- Overlay/Placeholder -->
+                        <div class="absolute inset-0 flex flex-col items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                             <Icon icon="heroicons:camera" class="w-10 h-10 text-white mb-2" />
+                             <span class="text-white text-sm font-medium">เปลี่ยนรูปปก</span>
+                        </div>
+                        
+                        <div v-if="!tempCover || tempCover.includes('default_cover')" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                             <Icon icon="heroicons:photo" class="w-12 h-12 text-gray-400 mb-2" />
+                             <span class="text-gray-500 text-sm">อัปโหลดรูปภาพ</span>
+                        </div>
 
-            <div class="grid grid-cols-1 gap-2 my-2">
-              <InputLabel for="course_category_input_form" value="กลุ่มสาระการเรียนรู้" />
-              <div class="flex justify-between items-center relative">
-
-                <input id="course_category_input_form" type="text"
-                  class="text-start w-full rounded-l-lg mr-[1px] border-1 border-gray-300" v-model="form.category"
-                  @input.prevent="()=>isOpenCategoryOptions=false" />
-
-                <button type="button" @click.prevent="()=>{ isOpenCategoryOptions = !isOpenCategoryOptions }"
-                  class="bg-blue-600 w-8 rounded-r-lg h-full flex justify-center items-center text-white">
-                  <Icon icon="heroicons-solid:chevron-down" class="w-9 h-9" />
-                </button>
-
-                <div v-if="isOpenCategoryOptions"
-                  class="absolute right-0 top-12 z-20 w-full pt-2 overflow-hidden bg-white rounded-md shadow-xl dark:bg-gray-800 transition-all duration-800">
-                  <div v-for="(category) in courseCategories" :key="category.name">
-                    <button @click.prevent="handleSelectCategory(category.name)"
-                      class="flex items-center w-full p-3 text-sm text-gray-600 capitalize transition-colors duration-300 transform dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 dark:hover:text-white">
-                      <Icon icon="solar:card-send-broken" class="w-5 h-5 mx-1" />
-                      <span class="mx-1">{{ category.name }}</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 gap-2 my-2">
-              <InputLabel for="course_level_input_form" value="ระดับการเรียนรู้" />
-              <div class="flex justify-between items-center relative">
-
-                <input id="course_level_input_form" type="text"
-                  class="text-start w-full rounded-l-lg mr-[1px] border-1 border-gray-300" v-model="form.level"
-                  @input.prevent="()=>isOpenLevelOptions=false" />
-
-                <button type="button" @click.prevent="()=>{ isOpenLevelOptions = !isOpenLevelOptions }"
-                  class="bg-blue-600 w-8 rounded-r-lg h-full flex justify-center items-center text-white">
-                  <Icon icon="heroicons-solid:chevron-down" class="w-9 h-9" />
-                </button>
-
-                <div v-if="isOpenLevelOptions"
-                  class="absolute right-0 top-12 z-20 w-full h-60 pt-2 overflow-y-scroll bg-white rounded-md shadow-xl dark:bg-gray-800 transition-all duration-800">
-                  <div v-for="(option) in courseLevelOptions" :key="option.level">
-                    <button @click.prevent="handleSelectLevel(option.level)"
-                      class="flex items-center w-full p-3 text-sm text-gray-600 capitalize transition-colors duration-300 transform dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 dark:hover:text-white">
-                      <Icon icon="solar:card-send-broken" class="w-5 h-5 mx-1" />
-                      <span class="mx-1">{{ option.level }}</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="grid sm:grid-cols-2 gap-2">
-                 <div class="relative sm:my-3">
-                    <select id="course-semester-input" v-model="form.semester"
-                      class="relative w-full h-12 px-4 pl-4 transition-all border rounded-lg outline-none focus-visible:outline-none peer border-slate-300 text-slate-500 bg-white focus:border-violet-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400 appearance-none">
-                      <option value="">เลือกภาคเรียน</option>
-                      <option value="1">1</option>
-                      <option value="2">2</option>
-                      <option value="3">3</option>
-                      <option value="summer">ฤดูร้อน</option>
-                    </select>
-                     <label for="course-semester-input"
-                      class="cursor-text peer-focus:cursor-default peer-autofill:-top-2 absolute left-2 -top-2 z-[1] px-2 text-xs text-slate-400 transition-all before:absolute before:top-0 before:left-0 before:z-[-1] before:block before:h-full before:w-full before:bg-white before:transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:left-4 peer-placeholder-shown:text-sm peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-violet-500 peer-disabled:cursor-not-allowed peer-disabled:text-slate-400 peer-disabled:before:bg-transparent">
-                      ภาคเรียนที่
-                    </label>
-                  </div>
-
-                  <div class="relative sm:my-3">
-                    <input id="course-academic-year-input" type="text" v-model="form.academic_year" placeholder=" "
-                      class="relative w-full h-12 px-4 pl-12 placeholder-transparent transition-all border rounded-lg outline-none focus-visible:outline-none peer border-slate-300 text-slate-500 autofill:bg-white invalid:border-pink-500 invalid:text-pink-500 focus:border-violet-500 focus:outline-none invalid:focus:border-pink-500 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400" />
-                    <label for="course-academic-year-input"
-                      class="cursor-text peer-focus:cursor-default peer-autofill:-top-2 absolute left-4 -top-2 z-[1] px-2 text-xs text-slate-400 transition-all before:absolute before:top-0 before:left-0 before:z-[-1] before:block before:h-full before:w-full before:bg-white before:transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:left-10 peer-placeholder-shown:text-sm peer-required:after:text-pink-500 peer-required:after:content-['\00a0*'] peer-invalid:text-pink-500 peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-violet-500 peer-invalid:peer-focus:text-pink-500 peer-disabled:cursor-not-allowed peer-disabled:text-slate-400 peer-disabled:before:bg-transparent">
-                      ปีการศึกษา (เช่น 2567)
-                    </label>
-                    <Icon icon="heroicons:calendar"
-                      class="absolute w-5 h-5 top-4 left-4 text-violet-600 peer-disabled:cursor-not-allowed" />
-                  </div>
-            </div>
-
-            <div class="grid sm:grid-cols-2 gap-2">
-
-              <div class="relative sm:my-3">
-                <input id="course-credit_unit-input" type="number" min="0" v-model="form.credit_units" placeholder="0"
-                  class="relative w-full h-12 px-4 pl-14 placeholder-transparent transition-all border rounded-lg outline-none focus-visible:outline-none peer border-slate-300 text-slate-500 autofill:bg-white invalid:border-pink-500 invalid:text-pink-500 focus:border-violet-500 focus:outline-none invalid:focus:border-pink-500 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400" />
-                <label for="course-credit_unit-input"
-                  class="cursor-text peer-focus:cursor-default peer-autofill:-top-2 absolute left-2 -top-2 z-[1] px-2 text-xs text-slate-400 transition-all before:absolute before:top-0 before:left-0 before:z-[-1] before:block before:h-full before:w-full before:bg-white before:transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:left-12 peer-placeholder-shown:text-sm peer-required:after:text-pink-500 peer-required:after:content-['\00a0*'] peer-invalid:text-pink-500 peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-violet-500 peer-invalid:peer-focus:text-pink-500 peer-disabled:cursor-not-allowed peer-disabled:text-slate-400 peer-disabled:before:bg-transparent">
-                  หน่วยกิต
-                </label>
-                <Icon icon="fluent:number-symbol-square-24-regular"
-                  class="absolute w-7 h-7 top-3 left-4 text-violet-600 peer-disabled:cursor-not-allowed" />
-              </div>
-
-              <div class="relative sm:my-3">
-                <input id="course-hpw-input" type="number" min="0" v-model="form.hours_per_week" placeholder="0"
-                  class="relative w-full h-12 px-4 pl-12 placeholder-transparent transition-all border rounded-lg outline-none focus-visible:outline-none peer border-slate-300 text-slate-500 autofill:bg-white invalid:border-pink-500 invalid:text-pink-500 focus:border-violet-500 focus:outline-none invalid:focus:border-pink-500 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400" />
-                <label for="course-hpw-input"
-                  class="cursor-text peer-focus:cursor-default peer-autofill:-top-2 absolute left-4 -top-2 z-[1] px-2 text-xs text-slate-400 transition-all before:absolute before:top-0 before:left-0 before:z-[-1] before:block before:h-full before:w-full before:bg-white before:transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:left-10 peer-placeholder-shown:text-sm peer-required:after:text-pink-500 peer-required:after:content-['\00a0*'] peer-invalid:text-pink-500 peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-violet-500 peer-invalid:peer-focus:text-pink-500 peer-disabled:cursor-not-allowed peer-disabled:text-slate-400 peer-disabled:before:bg-transparent">
-                  คาบ / สัปดาห์
-                </label>
-                <Icon icon="bi:calendar4-week"
-                  class="absolute w-5 h-5 top-4 left-4 text-violet-600 peer-disabled:cursor-not-allowed" />
-              </div>
-
-            </div>
-
-            <div class="flex">
-              <!-- <InputLabel for="course_description_input_form" value="ระยะเวลา" />
-              <div class="flex items-center space-x-2 -mt-2">
-                <div class="w-full ">
-                  <div class="">
-                    <VueDatePicker 
-                      :id="'slip-date-input'" 
-                      name="crsStartDateInput" 
-                      v-model="courseRange"
-                      :format="'dd/MM/yyyy'" 
-                      :enable-time-picker="false" 
-                      range 
-                      multi-calendars
-                      :model-value="courseRange" 
-                      @update:model-value="handleDateSelect"
-                      placeholder="วันเริ่มต้น - วันสิ้นสุด"
-                    </VueDatePicker>
-                  </div>
-                </div>
-              </div> -->
-              <div class="flex items-center mt-2">
-                    <div class="relative w-1/5 flex items-center justify-start h-10">
-                        <input id="asm-has-starte-date-input" type="checkbox"
-                            class="hidden w-4 h-4 transition-colors bg-white border-2 rounded appearance-none cursor-pointer focus-visible:outline-none peer border-slate-500 checked:border-emerald-500 checked:bg-emerald-500 checked:hover:border-emerald-600 checked:hover:bg-emerald-600 focus:outline-none checked:focus:border-emerald-700 checked:focus:bg-emerald-700 disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-50" />
-                        <label class="px-2 cursor-pointer text-slate-500 peer-disabled:cursor-not-allowed peer-disabled:text-slate-400"
-                            for="asm-has-starte-date-input">
-                            เริ่ม
-                        </label>
+                        <input type="file" class="hidden" accept="image/*" ref="coverInput" @change="onCoverInputChange" />
                     </div>
-                    <div class="w-4/5 flex flex-wrap justify-between gap-2">
-                         <div class="flex items-center w-full">
-                            <VueDatePicker 
-                                id="assigment-start-date-input"
-                                name="assignment-start-date-input" 
-                                :action-row="{ showNow: true }" now-button-label="Now"
-                                :model-value="crsStartDate" 
-                                placeholder="วันที่เริ่ม"
-                                @update:model-value="handleStartDateSelection"
-                                :format="'dd/MM/yyyy'"
-                            ></VueDatePicker>
+                    <p class="text-xs text-gray-500 mt-2 text-center">แนะนำขนาด 1920x1080px หรืออัตราส่วน 16:9</p>
+                </div>
+
+                <!-- Instructor Card -->
+                <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">ผู้สอน</label>
+                    <div class="flex items-center gap-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50">
+                        <img 
+                            :src="$page.props.auth.user.avatar || $page.props.auth.user.profile_photo_url" 
+                            :alt="$page.props.auth.user.name"
+                            class="w-12 h-12 rounded-full ring-2 ring-white dark:ring-gray-600 object-cover"
+                        >
+                        <div>
+                            <h3 class="font-bold text-gray-900 dark:text-gray-100">{{ $page.props.auth.user.name }}</h3>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Instructor</p>
                         </div>
                     </div>
-              </div>
-              <div class="flex items-center mt-2">
-                  <div class="relative w-1/5 flex items-center justify-start h-10">
-                      <input id="asm-has-end-date-input" type="checkbox"
-                          class="hidden w-4 h-4 transition-colors bg-white border-2 rounded appearance-none cursor-pointer focus-visible:outline-none peer border-slate-500 checked:border-emerald-500 checked:bg-emerald-500 checked:hover:border-emerald-600 checked:hover:bg-emerald-600 focus:outline-none checked:focus:border-emerald-700 checked:focus:bg-emerald-700 disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-50" />
-                      <label class="px-2 cursor-pointer text-slate-500 peer-disabled:cursor-not-allowed peer-disabled:text-slate-400"
-                          for="asm-has-end-date-input">
-                          ถึง
-                      </label>
-                  </div>
-                  <div class="w-4/5 flex flex-wrap justify-between gap-2">
-                      <div class="flex items-center w-full">
-                          <VueDatePicker 
-                              id="assigment-end-date-input"
-                              name="assignment-end-date-input"
-                              :model-value="crsEndDate" 
-                              placeholder="วันที่สิ้นสุด"
-                              @update:model-value="handleEndDateSelection"
-                              :format="'dd/MM/yyyy'"
-                          ></VueDatePicker>
-                      </div>
-                  </div>
-              </div>
-            </div>
+                </div>
 
-            <div class="grid grid-cols-1 gap-4 my-2">
-              <div class="relative flex flex-wrap items-center mt-2 mb-2">
-                <input type="checkbox" id="autoAcceptCourseMemberInput" v-model="form.auto_accept_members"
-                  :checked="form.auto_accept_members"
-                  class="w-4 h-4 transition-colors bg-white border-2 rounded appearance-none cursor-pointer focus-visible:outline-none peer border-slate-500 checked:border-violet-500 checked:bg-violet-500 checked:hover:border-violet-600 checked:hover:bg-violet-600 focus:outline-none checked:focus:border-violet-700 checked:focus:bg-violet-700 disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-50" />
-                <label
-                  class="pl-2 cursor-pointer text-slate-500 peer-disabled:cursor-not-allowed peer-disabled:text-slate-400"
-                  for="autoAcceptCourseMemberInput">
-                  ตอบรับคำขอเป็นสมาชิกอัตโนมัติ
-                </label>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 gap-2 mb-1">
-
-              <div class="relative mb-4">
-                <input id="course-fees-input" type="number" v-model="form.tuition_fees" placeholder="0"
-                  class="relative w-full h-12 px-4 pl-12 placeholder-transparent transition-all border rounded outline-none focus-visible:outline-none peer border-slate-300 text-slate-500 autofill:bg-white invalid:border-pink-500 invalid:text-pink-500 focus:border-violet-500 focus:outline-none invalid:focus:border-pink-500 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400" />
-                <label for="course-fees-input"
-                  class="cursor-text peer-focus:cursor-default peer-autofill:-top-2 absolute left-2 -top-2 z-[1] px-2 text-xs text-slate-400 transition-all before:absolute before:top-0 before:left-0 before:z-[-1] before:block before:h-full before:w-full before:bg-white before:transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:left-10 peer-placeholder-shown:text-sm peer-required:after:text-pink-500 peer-required:after:content-['\00a0*'] peer-invalid:text-pink-500 peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-violet-500 peer-invalid:peer-focus:text-pink-500 peer-disabled:cursor-not-allowed peer-disabled:text-slate-400 peer-disabled:before:bg-transparent">
-                  ค่าธรรมเนียมสมัครสมาชิก
-                </label>
-                <Icon icon="noto:coin"
-                  class="absolute w-6 h-6 top-3 left-4 stroke-slate-400 peer-disabled:cursor-not-allowed" />
-                <small
-                  class="absolute flex justify-between w-full mb-4 py-1 text-xs transition text-red-400 peer-invalid:text-pink-500">
-                  <span>คะแนนที่ต้องใช้เมื่อผู้อื่นต้องการเข้าร่วมสมาชิก</span>
-
-                </small>
-              </div>
-
-            </div>
-
-            <hr class="bg-white border-white" />
-
-            <div class="grid grid-cols-1 gap-4 my-4">
-              <div class="relative flex items-center">
-                <input
-                  class="w-4 h-4 transition-colors bg-white border-2 rounded appearance-none cursor-pointer focus-visible:outline-none peer border-slate-500 checked:border-violet-500 checked:bg-violet-500 checked:hover:border-violet-600 checked:hover:bg-violet-600 focus:outline-none checked:focus:border-violet-700 checked:focus:bg-violet-700 disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-50"
-                  type="checkbox" id="course-saling-input" v-model="form.saleable" :checked="form.saleable" />
-                <label
-                  class="pl-2 cursor-pointer text-slate-500 peer-disabled:cursor-not-allowed peer-disabled:text-slate-400"
-                  for="course-saling-input">
-                  <p class="flex">
-                    <span>ขาย </span>
-                    <span class="hidden md:block ml-1">(เมื่อมีการขอซื้อ)</span>
-                  </p>
-                </label>
-              </div>
-
-              <div v-if="form.saleable" class="grid grid-cols-1 md:grid-cols-2 gap-4 pl-0 md:pl-6">
-                  <div class="relative">
-                    <input id="course-price-input" type="number" v-model="form.price" placeholder=""
-                      class="relative w-full h-12 px-4 pl-12 placeholder-transparent transition-all border rounded outline-none focus-visible:outline-none peer border-slate-200 text-slate-500 autofill:bg-white invalid:border-pink-500 invalid:text-pink-500 focus:border-violet-500 focus:outline-none invalid:focus:border-pink-500 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400" />
-                    <label for="course-price-input"
-                      class="cursor-text peer-focus:cursor-default peer-autofill:-top-2 absolute left-2 -top-2 z-[1] px-2 text-xs text-slate-400 transition-all before:absolute before:top-0 before:left-0 before:z-[-1] before:block before:h-full before:w-full before:bg-white before:transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:left-10 peer-placeholder-shown:text-sm peer-required:after:text-pink-500 peer-required:after:content-['\00a0*'] peer-invalid:text-pink-500 peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-violet-500 peer-invalid:peer-focus:text-pink-500 peer-disabled:cursor-not-allowed peer-disabled:text-slate-400 peer-disabled:before:bg-transparent">
-                      ราคา (บาท)
-                    </label>
-                    <Icon icon="noto:money-bag"
-                      class="absolute w-6 h-6 top-3 left-4 stroke-slate-400 peer-disabled:cursor-not-allowed" />
-                  </div>
-
-                  <div class="flex gap-2">
-                    <div class="relative flex-1">
-                        <input id="course-discount-input" type="number" v-model="form.discount" placeholder=""
-                          :max="form.discount_type === 'percent' ? 100 : form.price"
-                          class="relative w-full h-12 px-4 pl-12 placeholder-transparent transition-all border rounded outline-none focus-visible:outline-none peer border-slate-200 text-slate-500 autofill:bg-white invalid:border-pink-500 invalid:text-pink-500 focus:border-violet-500 focus:outline-none invalid:focus:border-pink-500 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400" />
-                        <label for="course-discount-input"
-                          class="cursor-text peer-focus:cursor-default peer-autofill:-top-2 absolute left-2 -top-2 z-[1] px-2 text-xs text-slate-400 transition-all before:absolute before:top-0 before:left-0 before:z-[-1] before:block before:h-full before:w-full before:bg-white before:transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:left-10 peer-placeholder-shown:text-sm peer-required:after:text-pink-500 peer-required:after:content-['\00a0*'] peer-invalid:text-pink-500 peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-violet-500 peer-invalid:peer-focus:text-pink-500 peer-disabled:cursor-not-allowed peer-disabled:text-slate-400 peer-disabled:before:bg-transparent">
-                          ส่วนลด
-                        </label>
-                        <Icon v-if="form.discount_type === 'fixed'" icon="heroicons:currency-dollar" class="absolute w-6 h-6 top-3 left-4 stroke-slate-400 peer-disabled:cursor-not-allowed" />
-                        <Icon v-else icon="heroicons:receipt-percent" class="absolute w-6 h-6 top-3 left-4 stroke-slate-400 peer-disabled:cursor-not-allowed" />
-                    </div>
-                    <select v-model="form.discount_type" class="h-12 border border-slate-200 rounded px-2 bg-white text-slate-500 focus:border-violet-500 outline-none w-20">
-                        <option value="fixed">บาท</option>
-                        <option value="percent">%</option>
-                    </select>
-                  </div>
-              </div>
-
-              <div v-if="form.saleable" class="pl-0 md:pl-6 border-t pt-4 mt-2">
-                 <div class="flex justify-between items-center text-lg font-bold">
-                   <span class="text-gray-700 dark:text-gray-300">ราคาขายจริง (สุทธิ):</span>
-                   <span class="text-green-600 dark:text-green-400">
-                     {{ netPrice.toLocaleString() }} บาท
-                   </span>
+                 <!-- Course Code -->
+                 <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">รหัสวิชา</label>
+                     <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Icon icon="heroicons:qr-code" class="h-5 w-5 text-gray-400" />
+                        </div>
+                        <input type="text" v-model="form.code" 
+                            class="block w-full pl-10 pr-3 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
+                            placeholder="เช่น CS101"
+                        />
+                     </div>
                  </div>
-                 <p class="text-xs text-gray-500 text-right mt-1" v-if="form.discount > 0">
-                   (จากราคาปกติ {{ form.price }} บาท ลด {{ form.discount_type === 'percent' ? form.discount + '%' : form.discount + ' บาท' }})
-                 </p>
-               </div>
             </div>
 
-            <div class="flex space-x-2">
-              <p class="text-sm">ปิด</p>
-              <input type="checkbox" v-model="form.status" class="peer sr-only opacity-0"
-                id="input-course-status-toggle" />
-              <label for="input-course-status-toggle"
-                class="relative flex h-6 w-11 cursor-pointer items-center rounded-full bg-gray-400 px-0.5 outline-gray-400 transition-colors before:h-5 before:w-5 before:rounded-full before:bg-white before:shadow before:transition-transform before:duration-300 peer-checked:bg-green-500 peer-checked:before:translate-x-full peer-focus-visible:outline peer-focus-visible:outline-offset-2 peer-focus-visible:outline-gray-400 peer-checked:peer-focus-visible:outline-green-500">
-                <span class="sr-only">Enable</span>
-              </label>
-              <p class="text-sm">เปิด (การเรียนการสอน)</p>
-            </div>
-            <div class="grid grid-cols-1 gap-4">
-              <div class="flex items-center justify-around mt-4">
-                <button type="button" class="px-6 py-2 text-white bg-red-400 hover:bg-red-500 hover:text-white rounded">
-                  ยกเลิก
-                </button>
+            <!-- RIGHT COLUMN: Form Details -->
+            <div class="lg:col-span-8 space-y-8">
+                
+                <!-- Section 1: Basic Info -->
+                <section>
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">
+                        <span class="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/50 text-violet-600 flex items-center justify-center text-sm">1</span>
+                        ข้อมูลทั่วไป
+                    </h2>
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-700 space-y-6">
+                        <!-- Name -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">ชื่อรายวิชา <span class="text-red-500">*</span></label>
+                            <input type="text" v-model="form.name" required
+                                class="block w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:bg-white dark:focus:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all font-medium text-lg"
+                                placeholder="ตั้งชื่อวิชาให้สื่อความหมายและน่าสนใจ"
+                            />
+                        </div>
 
-                <button type="submit" class="px-6 py-2 text-gray-700 border bg-blue-500 hover:bg-blue-500 rounded-lg">
-                  บันทึก
-                </button>
-              </div>
+                        <!-- Description -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">คำอธิบายรายวิชา</label>
+                            <textarea v-model="form.description" rows="5"
+                                class="block w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:bg-white dark:focus:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all"
+                                placeholder="รายละเอียดเกี่ยวกับสิ่งที่ผู้เรียนจะได้เรียนรู้..."
+                            ></textarea>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 2: Classification -->
+                <section>
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">
+                        <span class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/50 text-blue-600 flex items-center justify-center text-sm">2</span>
+                        การจัดหมวดหมู่และระดับ
+                    </h2>
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-700 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        
+                        <!-- Category -->
+                         <div class="relative">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">กลุ่มสาระการเรียนรู้</label>
+                            <div class="relative">
+                                <button type="button" @click="isOpenCategoryOptions = !isOpenCategoryOptions"
+                                    class="w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-left px-4 py-3 rounded-xl flex items-center justify-between hover:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all"
+                                >
+                                    <span :class="form.category ? 'text-gray-900 dark:text-white' : 'text-gray-400'">
+                                        {{ form.category || 'เลือกกลุ่มสาระ' }}
+                                    </span>
+                                    <Icon icon="heroicons:chevron-down" class="w-5 h-5 text-gray-400" />
+                                </button>
+                                
+                                <!-- Dropdown -->
+                                <div v-if="isOpenCategoryOptions" class="absolute z-10 mt-2 w-full bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 max-h-60 overflow-y-auto">
+                                    <div v-for="cat in courseCategories" :key="cat.name" 
+                                        @click="handleSelectCategory(cat.name)"
+                                        class="px-4 py-3 hover:bg-violet-50 dark:hover:bg-violet-900/20 cursor-pointer text-gray-700 dark:text-gray-200 text-sm transition-colors border-b border-gray-50 dark:border-gray-700/50 last:border-0"
+                                    >
+                                        {{ cat.name }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Level -->
+                        <div class="relative">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">ระดับชั้น</label>
+                            <div class="relative">
+                                <button type="button" @click="isOpenLevelOptions = !isOpenLevelOptions"
+                                    class="w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-left px-4 py-3 rounded-xl flex items-center justify-between hover:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all"
+                                >
+                                    <span :class="form.level ? 'text-gray-900 dark:text-white' : 'text-gray-400'">
+                                        {{ form.level || 'เลือกระดับชั้น' }}
+                                    </span>
+                                    <Icon icon="heroicons:chevron-down" class="w-5 h-5 text-gray-400" />
+                                </button>
+
+                                <!-- Dropdown -->
+                                <div v-if="isOpenLevelOptions" class="absolute z-10 mt-2 w-full bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 max-h-60 overflow-y-auto">
+                                    <div v-for="lvl in courseLevelOptions" :key="lvl.level" 
+                                        @click="handleSelectLevel(lvl.level)"
+                                        class="px-4 py-3 hover:bg-violet-50 dark:hover:bg-violet-900/20 cursor-pointer text-gray-700 dark:text-gray-200 text-sm transition-colors border-b border-gray-50 dark:border-gray-700/50 last:border-0"
+                                    >
+                                        {{ lvl.level }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 3: Schedule & Settings -->
+                <section>
+                     <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">
+                        <span class="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/50 text-amber-600 flex items-center justify-center text-sm">3</span>
+                        การตั้งค่าและเวลา
+                    </h2>
+                     <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-700 space-y-6">
+                        
+                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                             <!-- Semester -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">ภาคเรียน</label>
+                                <select v-model="form.semester" class="block w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500">
+                                    <option value="">เลือกภาคเรียน</option>
+                                    <option value="1">ภาคเรียนที่ 1</option>
+                                    <option value="2">ภาคเรียนที่ 2</option>
+                                    <option value="3">ภาคเรียนที่ 3</option>
+                                    <option value="summer">ภาคเรียนฤดูร้อน</option>
+                                </select>
+                            </div>
+
+                            <!-- Year -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">ปีการศึกษา</label>
+                                <input type="text" v-model="form.academic_year" placeholder="เช่น 2567"
+                                    class="block w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                />
+                            </div>
+
+                            <!-- Credits -->
+                             <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">หน่วยกิต</label>
+                                <div class="relative">
+                                    <input type="number" v-model="form.credit_units" min="0" 
+                                        class="block w-full pl-4 pr-12 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                    />
+                                    <span class="absolute right-4 top-3 text-gray-400 text-sm">หน่วย</span>
+                                </div>
+                            </div>
+
+                             <!-- Hours -->
+                             <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">คาบ/สัปดาห์</label>
+                                <div class="relative">
+                                    <input type="number" v-model="form.hours_per_week" min="0" 
+                                        class="block w-full pl-4 pr-12 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                    />
+                                    <span class="absolute right-4 top-3 text-gray-400 text-sm">ชม.</span>
+                                </div>
+                            </div>
+                         </div>
+
+                         <div class="border-t border-gray-100 dark:border-gray-700 pt-6 mt-2">
+                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Start Date -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">วันที่เริ่มเรียน</label>
+                                    <ClientOnly>
+                                        <VueDatePicker v-model="crsStartDate" placeholder="เลือกวันเริ่มต้น" :format="'dd/MM/yyyy'" auto-apply @update:model-value="handleStartDateSelection" 
+                                            input-class-name="!bg-white dark:!bg-gray-700 !border-gray-200 dark:!border-gray-600 !rounded-xl !py-3 !text-gray-900 dark:!text-white"
+                                        />
+                                    </ClientOnly>
+                                </div>
+                                <!-- End Date -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">วันที่สิ้นสุด</label>
+                                    <ClientOnly>
+                                        <VueDatePicker v-model="crsEndDate" placeholder="เลือกวันสิ้นสุด" :format="'dd/MM/yyyy'" auto-apply @update:model-value="handleEndDateSelection"
+                                             input-class-name="!bg-white dark:!bg-gray-700 !border-gray-200 dark:!border-gray-600 !rounded-xl !py-3 !text-gray-900 dark:!text-white"
+                                        />
+                                    </ClientOnly>
+                                </div>
+                             </div>
+                         </div>
+
+                         <!-- Auto Accept -->
+                         <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-100 dark:border-gray-700">
+                             <div>
+                                 <h4 class="font-medium text-gray-900 dark:text-white">ตอบรับสมาชิกอัตโนมัติ</h4>
+                                 <p class="text-sm text-gray-500">ผู้เรียนจะเข้าเรียนได้ทันทีโดยไม่ต้องรอการอนุมัติ</p>
+                             </div>
+                              <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" v-model="form.auto_accept_members" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 dark:peer-focus:ring-violet-800 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-violet-600"></div>
+                             </label>
+                         </div>
+                     </div>
+                </section>
+
+                <!-- Section 4: Pricing -->
+                <section>
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">
+                        <span class="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 flex items-center justify-center text-sm">4</span>
+                        ค่าธรรมเนียมและราคา
+                    </h2>
+                     <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-700 space-y-6">
+                         
+                         <!-- Is Saleable Toggle -->
+                        <div class="flex items-center justify-between mb-4">
+                             <div>
+                                 <h4 class="font-medium text-gray-900 dark:text-white">เปิดขายรายวิชา</h4>
+                                 <p class="text-sm text-gray-500">เปิดใช้งานหากต้องการขายคอร์สนี้ให้บุคคลทั่วไป</p>
+                             </div>
+                              <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" v-model="form.saleable" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 dark:peer-focus:ring-emerald-800 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-500"></div>
+                             </label>
+                         </div>
+
+                         <div v-if="form.saleable" class="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in-down">
+                            <!-- Price -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">ราคาปกติ</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="text-gray-500 font-bold">฿</span>
+                                    </div>
+                                    <input type="number" v-model="form.price" min="0" placeholder="0.00"
+                                        class="block w-full pl-8 pr-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                    />
+                                </div>
+                            </div>
+                            
+                            <!-- Discount -->
+                             <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">ส่วนลด</label>
+                                <div class="flex">
+                                    <div class="relative flex-1">
+                                        <input type="number" v-model="form.discount" min="0" 
+                                            class="block w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-l-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 z-10"
+                                            placeholder="0"
+                                        />
+                                    </div>
+                                    <select v-model="form.discount_type" class="px-3 border-y border-r border-gray-200 dark:border-gray-600 rounded-r-xl bg-gray-50 dark:bg-gray-600 text-gray-700 dark:text-white focus:outline-none">
+                                        <option value="fixed">฿</option>
+                                        <option value="percent">%</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                             <!-- Net Price Summary -->
+                            <div class="md:col-span-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4 border border-emerald-100 dark:border-emerald-800/50 flex justify-between items-center">
+                                <span class="text-emerald-800 dark:text-emerald-100 font-medium">ราคาสุทธิ (Net Price)</span>
+                                <div class="text-right">
+                                    <div class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">฿{{ netPrice.toLocaleString() }}</div>
+                                    <div v-if="Number(form.discount) > 0" class="text-xs text-emerald-600/70">
+                                        (ลด {{ form.discount_type === 'percent' ? form.discount + '%' : '฿' + form.discount }})
+                                    </div>
+                                </div>
+                            </div>
+                         </div>
+                         
+                         <!-- Member Fee -->
+                         <div class="border-t border-gray-100 dark:border-gray-700 pt-6">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">ค่าธรรมเนียมสมัครสมาชิก (Point)</label>
+                            <div class="relative max-w-sm">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <Icon icon="noto:coin" class="h-5 w-5" />
+                                </div>
+                                <input type="number" v-model="form.tuition_fees" min="0" placeholder="0"
+                                    class="block w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                />
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">คะแนนที่ผู้เรียนต้องใช้เพื่อเข้าร่วมรายวิชานี้ (0 = ฟรี)</p>
+                         </div>
+                     </div>
+                </section>
+                
+                <!-- Action Buttons -->
+                <div class="flex items-center justify-end gap-4 pt-4 pb-12">
+                     <button type="button" @click="router.visit('/learn/courses')" 
+                        class="px-6 py-3 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                     >
+                         ยกเลิก
+                     </button>
+                     <button type="submit" 
+                        class="px-8 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold shadow-lg shadow-violet-200 dark:shadow-none transition-all transform hover:-translate-y-0.5"
+                     >
+                         สร้างรายวิชา
+                     </button>
+                </div>
             </div>
-          </form>
-        </div>
-      </div>
+        </form>
+       </div>
     </template>
   </CoursesLayout>
 </template>

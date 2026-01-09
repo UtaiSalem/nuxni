@@ -160,7 +160,8 @@ class AssignmentAnswerController extends Controller
 
         $answer->update([
             'points' => $request->points,
-            'feedback' => $request->feedback
+            'feedback' => $request->feedback,
+            'status' => 'graded', // Set status to graded when points are assigned
         ]);
 
         return response()->json([

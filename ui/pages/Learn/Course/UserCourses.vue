@@ -13,7 +13,7 @@ const props = defineProps({
 });
 
 // const user = ref(usePage().props.auth.user);
-const userCourses = ref(props.courses.data);
+const userCourses = ref(props.courses.data.filter(c => c.user.id != usePage().props.auth.user.id));
 
 const isLoading = ref(false);
 const isLoadingPage = ref(false);
@@ -25,8 +25,8 @@ const fetchMoreCourses = async () => {
         currentPage.value++;
         if (currentPage.value <= lastPage.value) {
             isLoading.value = true;
-            let coursesResp = await axios.get(`/api/courses/users/${usePage().props.auth.user.id}?page=${ currentPage.value }`);
-            if (coursesResp.data && coursesResp.data.success) {
+            let coursesResp = await axios.get(`/api/courses/users/${usePage().props.auth.user.id}/membered?page=${ currentPage.value }`);
+            if (coursesResp.data.success) {
                 coursesResp.data.courses.forEach(course => {
                     userCourses.value.push(course);
                 });

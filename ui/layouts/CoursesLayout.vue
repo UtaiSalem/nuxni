@@ -160,7 +160,7 @@ const handleLoadingPage = (option) => {
       <div></div>
     </template>
 
-    <template #mainContent>
+    <template #default>
       <slot name="coursesMainContent"></slot>
     </template>
   </MainLayout>

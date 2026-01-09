@@ -22,7 +22,7 @@ export const useUIStore = defineStore('ui', () => {
     return {
         isSidebarOpen,
         isDarkMode,
-        colorMode,
+        // colorMode, // Removed to prevent serialization issues
         toggleSidebar,
         toggleTheme,
         setTheme

@@ -144,7 +144,7 @@ onMounted(() => {
                 class="text-xs font-medium"
                 :class="getProgressColor(course.auth_progress || 0)"
               >
-                {{ course.auth_progress || 0 }}% Completed
+                {{ (course.auth_progress).toFixed(0) || 0 }}% Completed
               </span>
             </div>
           </div>

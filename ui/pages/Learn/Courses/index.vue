@@ -3,6 +3,8 @@ import { Icon } from '@iconify/vue'
 import BaseCard from '~/components/atoms/BaseCard.vue'
 import MyCoursesWidget from '~/components/widgets/MyCoursesWidget.vue'
 import MemberedCoursesWidget from '~/components/widgets/MemberedCoursesWidget.vue'
+import RecentlyViewedCoursesWidget from '~/components/widgets/RecentlyViewedCoursesWidget.vue'
+import FavoriteCoursesWidget from '~/components/widgets/FavoriteCoursesWidget.vue'
 import CourseCard from '~/components/CourseCard.vue'
 
 
@@ -28,6 +30,18 @@ const searchQuery = ref('')
 const selectedCategory = ref('all')
 const selectedLevel = ref('all')
 const sortBy = ref('latest')
+const selectedSemester = ref('all')
+const selectedYear = ref('all')
+
+// Semesters
+const semesters = ref([
+  { value: 'all', label: 'ทุกภาคเรียน' }
+])
+
+// Years
+const years = ref([
+  { value: 'all', label: 'ทุกปีการศึกษา' }
+])
 
 // Pagination
 const pagination = ref({
@@ -39,25 +53,14 @@ const pagination = ref({
 const hasMorePages = computed(() => pagination.value.currentPage < pagination.value.lastPage)
 
 // Categories
-const categories = [
-  { value: 'all', label: 'ทุกหมวดหมู่' },
-  { value: 'programming', label: 'การเขียนโปรแกรม' },
-  { value: 'design', label: 'การออกแบบ' },
-  { value: 'business', label: 'ธุรกิจ' },
-  { value: 'marketing', label: 'การตลาด' },
-  { value: 'math', label: 'คณิตศาสตร์' },
-  { value: 'science', label: 'วิทยาศาสตร์' },
-  { value: 'language', label: 'ภาษา' },
-  { value: 'other', label: 'อื่นๆ' },
-]
+const categories = ref([
+  { value: 'all', label: 'ทุกหมวดหมู่' }
+])
 
 // Levels
-const levels = [
-  { value: 'all', label: 'ทุกระดับ' },
-  { value: 'beginner', label: 'เริ่มต้น' },
-  { value: 'intermediate', label: 'กลาง' },
-  { value: 'advanced', label: 'สูง' },
-]
+const levels = ref([
+  { value: 'all', label: 'ทุกระดับ' }
+])
 
 // Sort options
 const sortOptions = [
@@ -94,6 +97,12 @@ const fetchCourses = async (page = 1, append = false) => {
     }
     if (sortBy.value) {
       params.append('sort', sortBy.value)
+    }
+    if (selectedSemester.value !== 'all') {
+      params.append('semester', selectedSemester.value)
+    }
+    if (selectedYear.value !== 'all') {
+      params.append('academic_year', selectedYear.value)
     }
 
     const response = await api.get(`/api/courses?${params.toString()}`)
@@ -167,12 +176,54 @@ const getCoverUrl = (course: any) => {
 const goToCourse = (courseId: number) => {
   router.push(`/courses/${courseId}`)
 }
+const fetchFilterOptions = async () => {
+  try {
+    const res: any = await api.get('/api/courses/filters')
+    if (res.success) {
+      // Semesters
+      if (res.semesters && res.semesters.length > 0) {
+         semesters.value = [
+            { value: 'all', label: 'ทุกภาคเรียน' },
+            ...res.semesters.map((s: string) => ({ value: s, label: `ภาคเรียนที่ ${s}` }))
+         ]
+      }
+
+      // Years
+      if (res.years && res.years.length > 0) {
+         years.value = [
+            { value: 'all', label: 'ทุกปีการศึกษา' },
+             ...res.years.map((y: string) => ({ value: y, label: y }))
+         ]
+      }
+
+      // Categories
+      if (res.categories && res.categories.length > 0) {
+         categories.value = [
+            { value: 'all', label: 'ทุกหมวดหมู่' },
+             ...res.categories.map((c: string) => ({ value: c, label: c }))
+         ]
+      }
+      
+      // Levels
+      if (res.levels && res.levels.length > 0) {
+         levels.value = [
+            { value: 'all', label: 'ทุกระดับ' },
+             ...res.levels.map((l: string) => ({ value: l, label: l }))
+         ]
+      }
+    }
+  } catch (error) {
+    console.error('Failed to fetch filter options', error)
+  }
+}
+
 onMounted(() => {
+  fetchFilterOptions()
   fetchCourses()
 })
 
 // Watch for filter changes
-watch([selectedCategory, selectedLevel, sortBy], () => {
+watch([selectedCategory, selectedLevel, sortBy, selectedSemester, selectedYear], () => {
   fetchCourses(1)
 })
 </script>
@@ -185,10 +236,17 @@ watch([selectedCategory, selectedLevel, sortBy], () => {
       <h1 class="text-2xl font-bold text-white">Courses</h1>
     </div>
 
-    <!-- Main Layout: Content + Sidebar -->
-    <div class="flex flex-col lg:flex-row gap-6">
-      <!-- Main Content -->
-      <div class="flex-1 min-w-0">
+    <!-- Main Layout: 3 Columns Grid (1:2:1) -->
+    <div class="grid grid-cols-1 xl:grid-cols-4 gap-6">
+      
+      <!-- Left Sidebar (Recently Viewed) -->
+      <div class="col-span-1 order-2 xl:order-1">
+        <RecentlyViewedCoursesWidget />
+        <FavoriteCoursesWidget />
+      </div>
+
+      <!-- Main Content (Center) -->
+      <div class="col-span-1 xl:col-span-2 min-w-0 order-1 xl:order-2">
         <!-- Filters Row -->
         <div class="flex flex-wrap gap-3 mb-6">
           <!-- Search -->
@@ -223,6 +281,26 @@ watch([selectedCategory, selectedLevel, sortBy], () => {
           >
             <option v-for="level in levels" :key="level.value" :value="level.value">
               {{ level.label }}
+            </option>
+          </select>
+
+          <!-- Semester -->
+          <select
+            v-model="selectedSemester"
+            class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option v-for="sem in semesters" :key="sem.value" :value="sem.value">
+              {{ sem.label }}
+            </option>
+          </select>
+
+          <!-- Year -->
+          <select
+            v-model="selectedYear"
+            class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option v-for="y in years" :key="y.value" :value="y.value">
+              {{ y.label }}
             </option>
           </select>
 
@@ -311,8 +389,8 @@ watch([selectedCategory, selectedLevel, sortBy], () => {
         </template>
       </div>
 
-      <!-- Sidebar -->
-      <div class="w-full lg:w-80 space-y-6 flex-shrink-0">
+      <!-- Right Sidebar -->
+      <div class="col-span-1 space-y-6 order-3">
         <MemberedCoursesWidget />
         <MyCoursesWidget />
         <!-- Popular Courses Widget -->

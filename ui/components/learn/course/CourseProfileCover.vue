@@ -537,6 +537,33 @@ onUnmounted(() => {
                     </div>
                 </div>
 
+                <!-- Rating Stats -->
+                <div v-if="course?.rating" class="group relative flex items-center gap-3 px-5 py-3 rounded-2xl bg-gradient-to-br from-yellow-50 to-amber-100 dark:from-yellow-900/30 dark:to-amber-800/30 border-2 border-yellow-200 dark:border-yellow-700 hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-r from-yellow-500/0 via-yellow-500/10 to-yellow-500/0 transform translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                    
+                    <div class="relative flex items-center justify-center w-12 h-12 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-xl shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300">
+                        <Icon icon="fluent:star-24-filled" class="w-6 h-6 text-white" />
+                    </div>
+                    <div class="relative">
+                        <div class="flex items-center gap-1">
+                            <span class="text-2xl font-black text-yellow-600 dark:text-yellow-400 leading-none">
+                                {{ typeof course.rating === 'number' ? course.rating.toFixed(1) : course.rating }}
+                            </span>
+                            <div class="flex items-center">
+                                <Icon 
+                                    v-for="star in 5" 
+                                    :key="star" 
+                                    :icon="star <= Math.round(course.rating) ? 'fluent:star-12-filled' : 'fluent:star-12-regular'" 
+                                    class="w-3 h-3 text-yellow-500"
+                                />
+                            </div>
+                        </div>
+                        <div class="text-xs font-semibold text-yellow-700/70 dark:text-yellow-300/70 mt-0.5">
+                            {{ course.reviews_count || 0 }} รีวิว
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Academy Info -->
                 <NuxtLink v-if="academy" :to="`/academies/${academy.id}`" 
                     class="group relative flex items-center gap-3 px-5 py-3 rounded-2xl bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30 border-2 border-orange-200 dark:border-orange-700 hover:shadow-xl transition-all duration-300 hover:scale-105 overflow-hidden">

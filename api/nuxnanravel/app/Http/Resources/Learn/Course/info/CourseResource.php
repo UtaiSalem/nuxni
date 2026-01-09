@@ -48,6 +48,7 @@ class CourseResource extends JsonResource
             'course_materials'  => $this->course_materials,
             'status'            => $this->status,
             'location'          => $this->location,
+            'is_favorited'      => $this->is_favorited,
             'accreditation'     => $this->accreditation,
             'accreditation_body'=> $this->accreditation_body,
             'level'             => $this->level,

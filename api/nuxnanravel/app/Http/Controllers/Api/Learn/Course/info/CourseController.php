@@ -84,19 +84,103 @@ class CourseController extends Controller
         ]);
     }
 
-    public function getMoreCourses()
+    public function getFavoriteCourses(Request $request)
     {
-        $query = Course::latest();
+        $courses = Course::whereHas('favorites', function($q) {
+            $q->where('user_id', auth()->id());
+        })
+        ->with(['user'])
+        ->orderBy('created_at', 'desc')
+        ->paginate($request->input('limit', 12));
+
+        return \App\Http\Resources\Learn\Course\info\CourseResource::collection($courses);
+    }
+
+    public function toggleFavorite(Request $request, $id)
+    {
+        $course = Course::findOrFail($id);
+        $user = auth()->user();
+
+        $action = $course->favorites()->toggle($user->id);
+
+        // 'attached' (added) or 'detached' (removed)
+        $isFavorited = count($action['attached']) > 0;
+
+        return response()->json([
+            'success' => true,
+            'is_favorited' => $isFavorited,
+            'message' => $isFavorited ? 'เพิ่มในรายการโปรดแล้ว' : 'ลบออกจากรายการโปรดแล้ว'
+        ]);
+    }
+
+    public function getMoreCourses(Request $request = null) {
+        $request = $request ?? request();
+        $query = Course::query();
+
+        // Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('code', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        // Filters
+        if ($request->filled('category') && $request->category !== 'all') {
+            $query->where('category', $request->category);
+        }
+
+        if ($request->filled('level') && $request->level !== 'all') {
+            $query->where('level', $request->level);
+        }
+        
+        if ($request->filled('semester') && $request->semester !== 'all') {
+            $query->where('semester', $request->semester);
+        }
+
+        if ($request->filled('academic_year') && $request->academic_year !== 'all') {
+            $query->where('academic_year', $request->academic_year);
+        }
+
+        // Sorting
+        if ($request->filled('sort')) {
+            switch ($request->sort) {
+                case 'latest':
+                    $query->latest();
+                    break;
+                case 'popular':
+                    $query->withCount('courseMembers')->orderBy('course_members_count', 'desc');
+                    break;
+                case 'price-low':
+                    $query->orderBy('price', 'asc');
+                    break;
+                case 'price-high':
+                    $query->orderBy('price', 'desc');
+                    break;
+                case 'rating':
+                    // Assuming rating logic exists or just fallback
+                    $query->latest(); 
+                    break;
+                default:
+                    $query->latest();
+            }
+        } else {
+            $query->latest();
+        }
 
         if (auth()->guard('api')->check()) {
             $query->with(['courseMembers' => function($q) {
                 $q->where('user_id', auth()->guard('api')->id());
             }]);
         }
+        
+        $perPage = $request->input('per_page', 15);
 
         return response()->json([
             'success'       => true,
-            'courses'       => CourseResource::collection($query->paginate()),
+            'courses'       => CourseResource::collection($query->paginate($perPage)),
         ], 200);
     }
 
@@ -141,9 +225,14 @@ class CourseController extends Controller
     public function getAuthMemberedCourses(User $user, Request $request)
     {
         $perPage = $request->input('per_page', 8); // Default to 8 if not specified
-        $authMemberCourse = CourseMember::where('user_id', auth()->id())->pluck('course_id')->all();
+        $authMemberCourse = CourseMember::where('user_id', auth()->id())
+            ->pluck('course_id')
+            ->all();
         
-        $query = Course::whereIn('id', $authMemberCourse)->latest()->paginate($perPage);
+        $query = Course::whereIn('id', $authMemberCourse)
+            ->where('user_id', '!=', auth()->id()) // Exclude courses owned by the user
+            ->latest()
+            ->paginate($perPage);
         $coursesAuthMember = MemberedCourseResource::collection($query);
 
         return response()->json([
@@ -164,6 +253,45 @@ class CourseController extends Controller
     /**
      * Show the form for creating a new resource.
      */
+    public function getSearchFilterOptions()
+    {
+        $semesters = Course::select('semester')
+            ->whereNotNull('semester')
+            ->where('semester', '!=', '')
+            ->distinct()
+            ->orderBy('semester')
+            ->pluck('semester');
+
+        $years = Course::select('academic_year')
+            ->whereNotNull('academic_year')
+            ->where('academic_year', '!=', '')
+            ->distinct()
+            ->orderBy('academic_year', 'desc')
+            ->pluck('academic_year');
+
+        $categories = Course::select('category')
+            ->whereNotNull('category')
+            ->where('category', '!=', '')
+            ->distinct()
+            ->orderBy('category')
+            ->pluck('category');
+
+        $levels = Course::select('level')
+            ->whereNotNull('level')
+            ->where('level', '!=', '')
+            ->distinct()
+            ->orderBy('level')
+            ->pluck('level');
+
+        return response()->json([
+            'success'       => true,
+            'semesters'     => $semesters,
+            'years'         => $years,
+            'categories'    => $categories,
+            'levels'        => $levels,
+        ]);
+    }
+
     public function create()
     {
         return response()->json(['message' => 'Create form not needed for API']);

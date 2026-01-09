@@ -9,6 +9,7 @@ use App\Models\Question;
 use App\Models\Assignment;
 use App\Models\CourseQuiz;
 use App\Models\CourseSetting;
+use App\Models\CourseReview;
 use App\Models\CourseAttendance;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -74,6 +75,19 @@ class Course extends Model
     public function members(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'course_members', 'course_id', 'user_id');
+    }
+
+    public function favorites()
+    {
+        return $this->belongsToMany(User::class, 'course_favorites', 'course_id', 'user_id')->withTimestamps();
+    }
+
+    public function getIsFavoritedAttribute()
+    {
+        if (!auth('api')->check()) {
+            return false;
+        }
+        return $this->favorites()->where('user_id', auth('api')->id())->exists();
     }
 
     public function courseMembers(): HasMany
@@ -156,5 +170,30 @@ class Course extends Model
             return $this->logo;
         }
         return asset('storage/images/courses/logos/' . $this->logo);
+    }
+
+    /**
+     * Get all reviews for the course.
+     */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(CourseReview::class);
+    }
+
+    /**
+     * Get the count of approved reviews.
+     */
+    public function getReviewsCountAttribute(): int
+    {
+        return $this->reviews()->where('is_approved', true)->count();
+    }
+
+    /**
+     * Get the average rating from approved reviews.
+     */
+    public function getAverageRatingAttribute(): ?float
+    {
+        $avg = $this->reviews()->where('is_approved', true)->avg('rating');
+        return $avg ? round($avg, 1) : null;
     }
 }

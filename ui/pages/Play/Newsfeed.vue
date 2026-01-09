@@ -13,6 +13,7 @@ import DonatesWidget from '~/components/widgets/DonatesWidget.vue'
 import AdvertisesWidget from '~/components/widgets/AdvertisesWidget.vue'
 import RecentlyViewedCoursesWidget from '~/components/widgets/RecentlyViewedCoursesWidget.vue'
 import PopularCoursesWidget from '~/components/widgets/PopularCoursesWidget.vue'
+import MemberedCoursesWidget from '~/components/widgets/MemberedCoursesWidget.vue'
 
 definePageMeta({
   layout: false,
@@ -249,6 +250,7 @@ onUnmounted(() => {
   <NuxtLayout name="main">
     <!-- Left Widgets Column -->
     <template #leftWidgets>
+      <MemberedCoursesWidget class="mb-6" />
       <ProfileCompletionWidget
         :completion="profileCompletion"
         :quests="quests"

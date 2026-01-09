@@ -25,6 +25,14 @@ export const courseService = {
         const response = await axios.get('/api/courses', { params });
         return response.data;
     },
+
+    /**
+     * Get favorite courses
+     */
+    async getFavoriteCourses(params = {}) {
+        const response = await axios.get('/api/courses/favorites', { params });
+        return response.data;
+    },
     
     /**
      * สร้างรายวิชาใหม่
@@ -47,6 +55,14 @@ export const courseService = {
      */
     async deleteCourse(courseId) {
         const response = await axios.delete(`/api/courses/${courseId}`);
+        return response.data;
+    },
+
+    /**
+     * Toggle favorite status
+     */
+    async toggleFavorite(courseId) {
+        const response = await axios.post(`/api/courses/${courseId}/favorite`);
         return response.data;
     },
     

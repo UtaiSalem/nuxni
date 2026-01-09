@@ -10,7 +10,7 @@ const props = defineProps({
     courses: Object,
 });
 
-const authMemberedCourses = ref(props.courses.data);
+const authMemberedCourses = ref(props.courses.data.filter(course => course.user.id != usePage().props.auth.user.id));
 const isLoading = ref(false);
 const isLoadingPage = ref(false);
 const currentPage = ref(1);
@@ -25,7 +25,9 @@ async function fetchMoreCourses(){
             let coursesResp = await axios.get(`/api/courses/users/${usePage().props.auth.user.id}/membered?page=${ currentPage.value }`);
             if (coursesResp.data.success) {
                 coursesResp.data.courses.forEach(course => {
-                    authMemberedCourses.value.push(course);
+                    if (course.user.id != usePage().props.auth.user.id) {
+                        authMemberedCourses.value.push(course);
+                    }
                 });
             }
         }

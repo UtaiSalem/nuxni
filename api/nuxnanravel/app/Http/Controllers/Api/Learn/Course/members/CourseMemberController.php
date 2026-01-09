@@ -133,8 +133,8 @@ class CourseMemberController extends Controller
             ];
         })->values();
         
-        // Get all quizzes with completion status and scores
-        $courseQuizzes = $course->courseQuizzes;
+        // Get all quizzes with completion status and scores (eager load questions for max_score calculation)
+        $courseQuizzes = $course->courseQuizzes()->with('questions')->get();
         
         $quizzes = $courseQuizzes->filter(function($quiz) {
             return $quiz->is_active;
@@ -151,15 +151,27 @@ class CourseMemberController extends Controller
                 ->where('course_id', $course->id)
                 ->count();
             
+            // Calculate max_score - prioritize total_score from quiz (synced when adding questions)
+            // Then try eager loaded questions sum, then question count
+            $maxScore = $quiz->total_score;
+            if (!$maxScore || $maxScore == 0) {
+                $maxScore = $quiz->questions->sum('points');
+            }
+            if (!$maxScore || $maxScore == 0) {
+                $maxScore = $quiz->questions->count() ?: 10;
+            }
+            
             return [
                 'id' => $quiz->id,
                 'title' => $quiz->title ?? $quiz->name ?? 'แบบทดสอบที่ ' . $quiz->id,
-                'max_score' => $quiz->total_points ?? $quiz->questions_count ?? 10,
+                'max_score' => $maxScore,
                 'score' => $result ? $result->score : null,
                 'completed' => $result !== null,
                 'attempt_count' => $attemptCount,
                 'completed_at' => $result ? $result->created_at : null,
-                'passed' => $result && $quiz->passing_score ? $result->score >= $quiz->passing_score : null,
+                'passed' => $result !== null 
+                    ? ($quiz->passing_score ? $result->score >= $quiz->passing_score : true) 
+                    : null,
             ];
         })->values();
 
@@ -417,16 +429,56 @@ class CourseMemberController extends Controller
 
     public function memberProgress(Course $course, CourseMember $course_member)
     {
-        // return response()->json([
+        $userId = $course_member->user_id;
+        
+        // Get quiz data for THE SELECTED member (not auth user)
+        $courseQuizzes = $course->courseQuizzes()->with('questions')->get();
+        
+        $quizzes = $courseQuizzes->filter(function($quiz) {
+            return $quiz->is_active;
+        })->map(function ($quiz) use ($userId, $course) {
+            $result = \App\Models\CourseQuizResult::where('quiz_id', $quiz->id)
+                ->where('user_id', $userId)
+                ->where('course_id', $course->id)
+                ->orderBy('score', 'desc')
+                ->first();
+            
+            $attemptCount = \App\Models\CourseQuizResult::where('quiz_id', $quiz->id)
+                ->where('user_id', $userId)
+                ->where('course_id', $course->id)
+                ->count();
+            
+            // Calculate max_score - prioritize total_score from quiz
+            $maxScore = $quiz->total_score;
+            if (!$maxScore || $maxScore == 0) {
+                $maxScore = $quiz->questions->sum('points');
+            }
+            if (!$maxScore || $maxScore == 0) {
+                $maxScore = $quiz->questions->count() ?: 10;
+            }
+            
+            return [
+                'id' => $quiz->id,
+                'title' => $quiz->title ?? 'แบบทดสอบที่ ' . $quiz->id,
+                'max_score' => $maxScore,
+                'score' => $result ? $result->score : null,
+                'completed' => $result !== null,
+                'attempt_count' => $attemptCount,
+                'completed_at' => $result ? $result->created_at : null,
+                'passed' => $result !== null 
+                    ? ($quiz->passing_score ? $result->score >= $quiz->passing_score : true) 
+                    : null,
+            ];
+        })->values();
+        
         return response()->json([
             'isCourseAdmin' => $course->user_id === auth()->id(),
             'course'        => new CourseResource($course),
             'lessons'       => LessonResource::collection($course->courseLessons),
             'groups'        => CourseGroupResource::collection($course->courseGroups),
             'member'        => new CourseMemberResource($course_member),
-            'assignments'       => AssignmentResource::collection($course->courseAssignments), 
-            'quizzes'           => CourseQuizResource::collection($course->courseQuizzes),
-            // 'courseMemberOfAuth' => $course->courseMembers()->where('id', $course_member->id)->first(),
+            'assignments'   => AssignmentResource::collection($course->courseAssignments), 
+            'quizzes'       => $quizzes,
             'courseMemberOfAuth' => $course_member,
         ]);
     }

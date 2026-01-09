@@ -41,7 +41,7 @@ use App\Http\Controllers\Api\Learn\Course\posts\CoursePostImageCommentReactionCo
 use App\Http\Controllers\Api\Learn\Course\lessons\LessonProgressController;
 use App\Http\Controllers\CoursePostShareController;
 use App\Http\Controllers\Api\Learn\Course\admins\CourseAdminController;
-
+use App\Http\Controllers\Api\Learn\Course\reviews\CourseReviewController;
 
 Route::middleware(['auth:api', 'verified'])->group(function () {
     Route::get('/courses/{course}/settings', [CourseController::class, 'settings'])->name('course.settings.page.show');
@@ -51,6 +51,8 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
 });
 
 Route::middleware(['auth:api', 'verified'])->prefix('/courses')->group(function () {
+    Route::get('/filters', [CourseController::class, 'getSearchFilterOptions'])->name('courses.filters');
+    Route::get('/favorites', [CourseController::class, 'getFavoriteCourses'])->name('courses.favorites');
     Route::get('/', [CourseController::class, 'index'])->name('courses');
     Route::post('/', [CourseController::class, 'store'])->name('courses.store');
     Route::get('/create', [CourseController::class, 'create'])->name('courses.create');
@@ -59,6 +61,7 @@ Route::middleware(['auth:api', 'verified'])->prefix('/courses')->group(function 
     Route::patch('/{course}', [CourseController::class, 'update'])->name('course.part.update');
     Route::delete('/{course}', [CourseController::class, 'destroy'])->name('course.destroy');
     Route::get('/{course}/progress', [CourseController::class, 'progress'])->name('course.progress');
+    Route::post('/{course}/favorite', [CourseController::class, 'toggleFavorite'])->name('course.favorite');
     
     Route::get('/users/{user}', [CourseController::class, 'getUserCourses'])->name('user.courses');
     Route::get('/users/{user}/member', [CourseController::class, 'getAuthMemberCourses'])->name('auth.member.courses');
@@ -350,3 +353,12 @@ Route::middleware(['auth:api', 'verified'])->prefix('/courses/{course}/admins')-
     Route::post('/invitations/{member}/decline', [CourseAdminController::class, 'declineInvitation'])->name('course.admins.invitation.decline');
 });
 
+// Course Reviews Routes
+Route::middleware(['auth:api', 'verified'])->prefix('/courses/{course}/reviews')->group(function () {
+    Route::get('/', [CourseReviewController::class, 'index'])->name('course.reviews.index');
+    Route::post('/', [CourseReviewController::class, 'store'])->name('course.reviews.store');
+    Route::get('/my-review', [CourseReviewController::class, 'myReview'])->name('course.reviews.my-review');
+    Route::get('/{review}', [CourseReviewController::class, 'show'])->name('course.reviews.show');
+    Route::put('/{review}', [CourseReviewController::class, 'update'])->name('course.reviews.update');
+    Route::delete('/{review}', [CourseReviewController::class, 'destroy'])->name('course.reviews.destroy');
+});

@@ -8,6 +8,44 @@ const props = defineProps<{
 
 const router = useRouter()
 const config = useRuntimeConfig()
+const api = useApi()
+
+// Favorite State
+const isFavorited = ref(props.course.is_favorited)
+const isLoadingFavorite = ref(false)
+
+watch(() => props.course.is_favorited, (newVal) => {
+  isFavorited.value = newVal
+})
+
+const toggleFavorite = async (e: Event) => {
+  e.stopPropagation() // Prevent card click
+  if (isLoadingFavorite.value) return
+  
+  // Optimistic update
+  const previousState = isFavorited.value
+  isFavorited.value = !previousState
+  isLoadingFavorite.value = true
+
+  try {
+    const res = (await api.post(`/api/courses/${props.course.id}/favorite`)) as any
+    // Backend returns { success: true, is_favorited: boolean, message: string }
+    if (res.is_favorited !== undefined) {
+      isFavorited.value = res.is_favorited
+      // Update the prop object reference if possible/needed so other components using the same object update?
+      // Since props are readonly, we shouldn't mutate props.course directly if we can avoid it, 
+      // but strictly speaking, in JS objects passed by reference can be mutated. 
+      // However, let's stick to local state for display.
+      props.course.is_favorited = res.is_favorited; 
+    }
+  } catch (error) {
+    // Revert
+    isFavorited.value = previousState
+    console.error('Failed to toggle favorite', error)
+  } finally {
+    isLoadingFavorite.value = false
+  }
+}
 
 const getCoverUrl = (course: any) => {
   if (course.cover) {
@@ -62,6 +100,19 @@ const goToCourse = () => {
       >
         {{ getBadgeType(course, index ?? 0) === 'bestseller' ? 'Best Seller' : 'Trending' }}
       </div>
+
+      <!-- Favorite Button -->
+      <button
+        class="absolute top-3 right-3 p-2 rounded-full bg-white/80 dark:bg-black/50 hover:bg-white dark:hover:bg-black/70 transition-all text-red-500 z-10 shadow-sm backdrop-blur-sm"
+        @click="toggleFavorite"
+        :title="isFavorited ? 'Remove from favorites' : 'Add to favorites'"
+      >
+        <Icon 
+          :icon="isFavorited ? 'fluent:heart-24-filled' : 'fluent:heart-24-regular'" 
+          class="w-5 h-5 transition-transform active:scale-95"
+          :class="{ 'animate-pulse': isLoadingFavorite }" 
+        />
+      </button>
 
       <!-- Rating Badge -->
       <div
@@ -138,7 +189,7 @@ const goToCourse = () => {
                 <Icon icon="fluent:hat-graduation-16-filled" />
                 Student
              </span>
-             <span class="text-gray-500">{{ course.auth_progress || 0 }}%</span>
+             <span class="text-gray-500">{{ Math.round(course.auth_progress || 0) }}%</span>
           </div>
           <!-- Progress Bar -->
           <div class="h-1.5 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">

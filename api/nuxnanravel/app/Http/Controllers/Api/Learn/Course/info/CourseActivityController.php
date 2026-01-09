@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Learn\Course\info;
 
 use App\Models\Course;
 use App\Models\Activity;
+use App\Models\RecentlyViewedCourse;
 use App\Models\CoursePost;
 use App\Models\CourseGroup;
 use App\Http\Controllers\Controller;
@@ -27,6 +28,14 @@ class CourseActivityController extends Controller implements HasMiddleware
     {
 
         try {
+            
+            // Record recently viewed
+            if (auth()->check()) {
+                RecentlyViewedCourse::updateOrInsert(
+                    ['user_id' => auth()->id(), 'course_id' => $course->id],
+                    ['updated_at' => now()]
+                );
+            }
 
             $isCourseAdmin = $course->user_id == auth()->id();
             $cma = $course->courseMembers()->where('user_id', auth()->id())->first();

@@ -887,9 +887,9 @@ onMounted(() => {
               <div 
                 v-for="assignment in memberDetails.assignments" 
                 :key="assignment.id"
-                class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                class="flex items-center justify-between gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
               >
-                <span class="text-sm text-gray-700 dark:text-gray-300">{{ assignment.title }}</span>
+                <span class="text-sm text-gray-700 dark:text-gray-300 truncate flex-1 min-w-0" :title="assignment.title">{{ assignment.title }}</span>
                 <div class="flex items-center gap-2">
                   <!-- Score Display (only if graded) -->
                   <span v-if="assignment.graded" class="text-sm font-bold text-green-600 dark:text-green-400">

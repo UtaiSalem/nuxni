@@ -12,7 +12,7 @@ const fetchRecentCourses = async () => {
   try {
     const res = (await api.get('/api/me/recent-courses')) as any // Cast to any to bypass unknown type error or define interface
     if (res.success) {
-      recentCourses.value = res.courses
+      recentCourses.value = res.courses.slice(0, 5)
     }
   } catch (error) {
     console.error('Failed to fetch recent courses', error)
@@ -28,7 +28,7 @@ onMounted(() => {
 
 <template>
   <div class="bg-white dark:bg-vikinger-dark-200 rounded-xl p-4 shadow-sm mb-6">
-    <h3 class="font-semibold text-gray-900 dark:text-white mb-4">เรียนต่อจากเดิม</h3>
+    <h3 class="font-semibold text-gray-900 dark:text-white mb-4">เข้าชมล่าสุด</h3>
 
     <div v-if="isLoading" class="space-y-3">
       <div v-for="i in 3" :key="i" class="flex gap-3 animate-pulse">
